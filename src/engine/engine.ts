@@ -47,10 +47,14 @@ export class TimerEngine {
   private laps: Lap[] = [];
   private roundTaps: number[] = [];
   private listeners = new Set<() => void>();
+  /** True while advance() runs: cue handlers / listeners that call tick() must not re-enter it. */
+  private advancing = false;
+  /** Bumped by every control that moves the timeline; lets advance() notice re-entrant changes. */
+  private epoch = 0;
 
   constructor(segments: Segment[], opts: EngineOptions = {}) {
     if (segments.length === 0) throw new Error('TimerEngine needs at least one segment');
-    this.original = segments.map((s) => ({ ...s }));
+    this.original = segments.map((s) => ({ ...s, durationMs: safeDuration(s.durationMs) }));
     this.segments = this.original.map((s) => ({ ...s }));
     this.now = opts.now ?? defaultClock;
     this.onCue = opts.onCue;
@@ -81,6 +85,7 @@ export class TimerEngine {
     if (this.status === 'running') return;
     if (this.status === 'finished') this.reset();
     const wasPaused = this.status === 'paused';
+    this.epoch++;
     this.runStart = this.now();
     this.status = 'running';
     if (wasPaused) {
@@ -97,7 +102,9 @@ export class TimerEngine {
     // One clock read: the paused position is exactly the position we advanced to.
     const e = this.sync();
     if (this.getStatus() !== 'running') return; // advancing may have finished it
+    this.epoch++;
     this.accumulated = e;
+    this.lastTickElapsed = e;
     this.status = 'paused';
     this.emit({ type: 'pause' });
     this.changed();
@@ -113,6 +120,7 @@ export class TimerEngine {
   }
 
   reset() {
+    this.epoch++;
     this.status = 'idle';
     this.accumulated = 0;
     this.runStart = 0;
@@ -131,26 +139,38 @@ export class TimerEngine {
     if (this.status === 'idle' || this.status === 'finished') return;
     const e = this.sync();
     if (this.getStatus() === 'finished') return;
-    this.advanceTo(this.segIndex + 1, e);
+    this.epoch++;
     this.lastTickElapsed = e;
+    this.advanceTo(this.segIndex + 1, e);
     this.changed();
   }
 
   /**
    * Restart the current segment, or — if we're within the first 2 seconds
    * of it — go back to the previous one.
+   *
+   * Landing on (or before) the first work segment puts the plan position back
+   * at 0, so it is a restart of the workout itself: the work clock, laps and
+   * round taps are reset too. Otherwise (e.g. redoing round 5 of a Tabata) the
+   * work clock keeps measuring real time spent and laps/taps are kept;
+   * `remainingWorkMs` / `overallProgress` follow the plan position.
    */
   previous() {
     if (this.status === 'idle' || this.status === 'finished') return;
     const e = this.sync();
     if (this.getStatus() === 'finished') return;
+    this.epoch++;
     const inSeg = e - this.segStart;
     const target = inSeg < 2000 && this.segIndex > 0 ? this.segIndex - 1 : this.segIndex;
     const prev = this.segments[this.segIndex];
     this.segIndex = target;
     this.segStart = e;
-    if (this.segments[target].kind === 'prep') this.workStart = null;
     this.lastTickElapsed = e;
+    if (target <= this.firstWorkIndex()) {
+      this.workStart = this.segments[target].kind === 'prep' ? null : e;
+      this.laps = [];
+      this.roundTaps = [];
+    }
     this.emit({ type: 'segment', segment: this.segments[target], index: target, previous: prev });
     this.changed();
   }
@@ -161,6 +181,7 @@ export class TimerEngine {
     // Advance first: if the planned end already passed, finish at that end, not "now".
     const e = this.sync();
     if (this.getStatus() === 'finished') return;
+    this.epoch++;
     this.doFinish(e);
   }
 
@@ -169,13 +190,16 @@ export class TimerEngine {
    * Never shortens a segment below what has already elapsed + 1s.
    */
   adjustCurrent(deltaMs: number) {
-    if (this.status === 'finished') return;
+    if (this.status === 'finished' || !Number.isFinite(deltaMs)) return;
     // Bring the timeline up to date first so we adjust the segment actually on screen.
     const e = this.sync();
     if (this.getStatus() === 'finished') return;
-    const seg = this.segments[this.segIndex];
+    const idle = this.status === 'idle';
+    // While idle the screen previews the first work segment, never "get ready".
+    const seg = this.segments[idle ? this.firstWorkIndex() : this.segIndex];
     if (seg.durationMs === null) return;
-    const inSeg = this.status === 'idle' ? 0 : e - this.segStart;
+    this.epoch++;
+    const inSeg = idle ? 0 : e - this.segStart;
     seg.durationMs = Math.max(inSeg + 1000, seg.durationMs + deltaMs, 1000);
     this.changed();
   }
@@ -231,8 +255,23 @@ export class TimerEngine {
   }
 
   private advance(e: number) {
+    // Re-entrancy guard: a cue handler or listener calling tick() from inside
+    // advance() would otherwise replay the same crossings (double beeps).
+    if (this.advancing) return;
+    this.advancing = true;
+    try {
+      this.advanceInner(e);
+    } finally {
+      this.advancing = false;
+    }
+  }
+
+  private advanceInner(e: number) {
     const gap = e - this.lastTickElapsed;
     const catchingUp = gap > CATCH_UP_GAP_MS;
+    const epoch = this.epoch;
+    /** A handler paused / reset / skipped while we were emitting: stop here. */
+    const interrupted = () => this.epoch !== epoch || this.status !== 'running';
 
     // Advance through any segments whose end we've passed.
     let transitioned = false;
@@ -243,6 +282,7 @@ export class TimerEngine {
       const end = this.segStart + seg.durationMs;
       if (e < end) break;
       if (!catchingUp) this.emitCrossings(seg, this.lastTickElapsed, end);
+      if (interrupted()) return;
       if (this.segIndex + 1 >= this.segments.length) {
         // Finish exactly at the planned end, not at the (later) tick time.
         this.doFinish(end);
@@ -263,10 +303,13 @@ export class TimerEngine {
         index: this.segIndex,
         previous: from,
       });
+      if (interrupted()) return;
       this.changed();
+      if (interrupted()) return;
     }
 
     if (!catchingUp) this.emitCrossings(this.segments[this.segIndex], this.lastTickElapsed, e);
+    if (interrupted()) return;
     this.lastTickElapsed = e;
   }
 
@@ -293,6 +336,12 @@ export class TimerEngine {
       plannedWorkMs: planned,
       overallProgress:
         this.status === 'finished' ? 1 : planned ? Math.min(1, this.positionMs(segElapsed) / planned) : 0,
+      remainingWorkMs:
+        planned === null
+          ? null
+          : this.status === 'finished'
+            ? 0
+            : Math.max(0, planned - this.positionMs(segElapsed)),
       next: this.segments[this.segIndex + 1] ?? null,
       laps: this.laps,
       roundsTapped: this.roundTaps.length,
@@ -326,6 +375,11 @@ export class TimerEngine {
     }
     if (this.segments[this.segIndex].kind !== 'prep') pos += segElapsed;
     return pos;
+  }
+
+  private firstWorkIndex(): number {
+    const i = this.segments.findIndex((s) => s.kind !== 'prep');
+    return i < 0 ? 0 : i;
   }
 
   private advanceTo(index: number, e: number) {
@@ -424,4 +478,12 @@ export class TimerEngine {
   private changed() {
     this.listeners.forEach((l) => l());
   }
+}
+
+/** Coerce a segment duration into a usable value: finite and >= 0, or null (open-ended). */
+function safeDuration(d: number | null): number | null {
+  if (d === null) return null;
+  if (typeof d !== 'number' || Number.isNaN(d)) return 0;
+  if (d === Infinity) return null;
+  return Math.max(0, d);
 }

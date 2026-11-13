@@ -980,3 +980,158 @@ describe('edge cases', () => {
     }
   });
 });
+
+// ------------------------------------------------------- review regressions
+
+describe('review regressions', () => {
+  it('A: previous() in a single-segment mode restarts the workout clock, laps and taps', () => {
+    // Stopwatch / For Time: one open-ended work segment.
+    const h = harness([seg(null)]);
+    h.engine.start();
+    h.run(30_000);
+    h.engine.lap();
+    h.engine.tapRound();
+    h.run(40_000);
+    h.engine.previous();
+    expect(h.engine.snapshot()).toMatchObject({
+      segmentElapsedMs: 0,
+      workElapsedMs: 0,
+      laps: [],
+      roundsTapped: 0,
+    });
+    h.run(45_000);
+    h.engine.lap();
+    const s = h.engine.snapshot();
+    expect(s.workElapsedMs).toBe(5_000);
+    expect(s.segmentElapsedMs).toBe(5_000);
+    expect(s.laps).toEqual([{ index: 1, atMs: 5_000, splitMs: 5_000, segmentIndex: 0 }]);
+    h.engine.finish();
+    expect(h.engine.snapshot()).toMatchObject({ status: 'finished', workElapsedMs: 5_000 });
+  });
+
+  it('A: previous() in a countdown with prep keeps elapsed + remaining consistent', () => {
+    const h = harness([seg(5_000, 'prep'), seg(60_000)]);
+    h.engine.start();
+    h.run(25_000); // 20s into the countdown
+    h.engine.previous();
+    let s = h.engine.snapshot();
+    expect(s).toMatchObject({ segmentIndex: 1, workElapsedMs: 0, remainingWorkMs: 60_000, segmentRemainingMs: 60_000 });
+    h.run(35_000);
+    s = h.engine.snapshot();
+    expect(s.workElapsedMs + s.remainingWorkMs!).toBe(60_000);
+    h.run(200_000);
+    expect(h.engine.snapshot()).toMatchObject({ status: 'finished', workElapsedMs: 60_000, totalElapsedMs: 85_000 });
+  });
+
+  it('A: remainingWorkMs follows the plan position after previous()/next() in multi-segment modes', () => {
+    const h = harness([seg(20_000), seg(10_000, 'rest'), seg(20_000)]);
+    expect(h.engine.snapshot().remainingWorkMs).toBe(50_000);
+    h.engine.start();
+    h.run(25_000); // 5s into rest
+    expect(h.engine.snapshot().remainingWorkMs).toBe(25_000);
+    h.engine.previous(); // restart rest
+    expect(h.engine.snapshot()).toMatchObject({ remainingWorkMs: 30_000, workElapsedMs: 25_000 });
+    h.engine.next(); // skip rest
+    expect(h.engine.snapshot().remainingWorkMs).toBe(20_000);
+    h.run(45_000);
+    expect(h.engine.snapshot()).toMatchObject({ status: 'finished', remainingWorkMs: 0 });
+  });
+
+  it('A: previous() later in a multi-segment workout keeps laps/taps and wall-clock work time', () => {
+    const h = harness([seg(20_000), seg(20_000)]);
+    h.engine.start();
+    h.run(5_000);
+    h.engine.tapRound();
+    h.run(30_000);
+    h.engine.previous(); // restart segment 2
+    expect(h.engine.snapshot()).toMatchObject({ segmentIndex: 1, roundsTapped: 1, workElapsedMs: 30_000 });
+  });
+
+  it('B: a cue handler that calls tick() re-entrantly never double-fires cues', () => {
+    let t = 0;
+    const log: Cue[] = [];
+    const e: TimerEngine = new TimerEngine([seg(10_000), seg(10_000)], {
+      now: () => t,
+      onCue: (c) => {
+        log.push(c);
+        e.tick();
+        e.snapshot();
+      },
+    });
+    e.start();
+    for (t = 0; t <= 25_000; t += 16) e.tick();
+    expect(log.filter((c) => c.type === 'countdown')).toHaveLength(6);
+    expect(log.filter((c) => c.type === 'segment')).toHaveLength(1);
+    expect(log.filter((c) => c.type === 'finish')).toHaveLength(1);
+  });
+
+  it('B: a subscriber that calls tick() re-entrantly never double-fires cues', () => {
+    const h = harness([seg(5_000), seg(5_000), seg(5_000)]);
+    h.engine.subscribe(() => h.engine.tick());
+    h.engine.start();
+    h.run(20_000, 16);
+    expect(h.of('countdown')).toHaveLength(9);
+    expect(h.of('segment')).toHaveLength(2);
+    expect(h.of('finish')).toHaveLength(1);
+  });
+
+  it('B: a cue handler that pauses mid-advance stops the timeline where it paused', () => {
+    let t = 0;
+    const segs = [seg(5_000), seg(5_000), seg(5_000)];
+    const e: TimerEngine = new TimerEngine(segs, {
+      now: () => t,
+      onCue: (c) => {
+        if (c.type === 'segment') e.pause();
+      },
+    });
+    e.start();
+    t = 5_100;
+    e.tick();
+    t = 60_000;
+    expect(e.tick()).toMatchObject({ status: 'paused', segmentIndex: 1, totalElapsedMs: 5_100 });
+  });
+
+  it('C: adjustCurrent() while idle adjusts the first work segment, not prep', () => {
+    const h = harness([seg(10_000, 'prep'), seg(60_000), seg(30_000)]);
+    h.engine.adjustCurrent(30_000);
+    const segs = h.engine.getSegments();
+    expect(segs.map((s) => s.durationMs)).toEqual([10_000, 90_000, 30_000]);
+    expect(h.engine.snapshot().plannedWorkMs).toBe(120_000);
+  });
+
+  it('adjustCurrent() ignores non-finite deltas', () => {
+    const h = harness([seg(30_000)]);
+    h.engine.start();
+    h.run(1_000);
+    h.engine.adjustCurrent(NaN);
+    h.engine.adjustCurrent(Infinity);
+    expect(h.engine.snapshot()).toMatchObject({ segmentRemainingMs: 29_000, plannedWorkMs: 30_000 });
+  });
+
+  it('non-finite / negative segment durations never produce NaN', () => {
+    const bad: Segment[] = [
+      { kind: 'work', label: 'a', durationMs: NaN, direction: 'down' },
+      { kind: 'work', label: 'b', durationMs: -5, direction: 'down' },
+      { kind: 'work', label: 'c', durationMs: 5_000, direction: 'down' },
+    ];
+    const h = harness(bad);
+    h.engine.start();
+    h.run(2_000);
+    const s = h.engine.snapshot();
+    expect(s.segmentIndex).toBe(2);
+    for (const v of [s.segmentElapsedMs, s.segmentProgress, s.overallProgress, s.workElapsedMs, s.plannedWorkMs]) {
+      expect(Number.isFinite(v)).toBe(true);
+    }
+    h.run(10_000);
+    expect(h.engine.snapshot()).toMatchObject({ status: 'finished', totalElapsedMs: 5_000 });
+  });
+
+  it('long stopwatch sessions: hours display and minute markers stay correct', () => {
+    const h = harness([seg(null)]);
+    h.engine.start();
+    h.run(2 * 3_600_000 + 5 * 60_000 + 9_000, 1_000);
+    const s = h.engine.snapshot();
+    expect(formatClock(s.segmentElapsedMs).main).toBe('2:05:09');
+    expect(h.of('minute')).toHaveLength(125);
+  });
+});

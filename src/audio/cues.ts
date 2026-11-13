@@ -2,7 +2,7 @@ import type { Cue, Segment } from '../engine/types';
 import type { Settings } from '../state/store';
 import { setVolume, unlockAudio } from './context';
 import { minutePhrase, segmentPhrase } from './phrases';
-import { primeSpeech, say } from './speech';
+import { primeSpeech, say, stopSpeech } from './speech';
 import {
   click,
   countdownBeep,
@@ -48,6 +48,12 @@ let pending: string[] = [];
 let pendingVolume = 1;
 let flushScheduled = false;
 
+/** Drop queued phrases and silence anything being spoken. */
+function silence(): void {
+  pending = [];
+  stopSpeech();
+}
+
 function speak(settings: Settings, text: string): void {
   if (!settings.voice || !text) return;
   pendingVolume = settings.volume;
@@ -58,7 +64,7 @@ function speak(settings: Settings, text: string): void {
     flushScheduled = false;
     const phrase = pending.join('. ');
     pending = [];
-    say(phrase, pendingVolume);
+    if (phrase) say(phrase, pendingVolume);
   });
 }
 
@@ -106,6 +112,18 @@ export const cuePlayer = {
     }
   },
 
+  /**
+   * Silence speech (queued and in flight). Call when the run screen goes
+   * away or the timer is reset, so no announcement outlives the workout.
+   */
+  stop(): void {
+    try {
+      silence();
+    } catch {
+      /* ignore */
+    }
+  },
+
   handle(cue: Cue, settings: Settings): void {
     try {
       switch (cue.type) {
@@ -145,6 +163,8 @@ export const cuePlayer = {
           speak(settings, 'Time! Great work');
           break;
         case 'pause':
+          // A stale "Ten seconds" must not be spoken while the clock is stopped.
+          silence();
           sound(settings, 'pause', () => click(false));
           vibrate(settings, PATTERN.click);
           break;

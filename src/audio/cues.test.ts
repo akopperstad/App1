@@ -107,6 +107,49 @@ describe('cuePlayer', () => {
     expect(spoken).toEqual(['Work. Burpees', 'Halfway. 2 minutes remaining', 'Time! Great work']);
     expect(vibrate).toHaveBeenCalled();
   });
+
+  it('pause and stop() cancel queued and in-flight speech (nothing spoken after leaving)', () => {
+    vi.useFakeTimers();
+    const spoken: string[] = [];
+    const cancel = vi.fn();
+    vi.stubGlobal(
+      'SpeechSynthesisUtterance',
+      class {
+        text: string;
+        constructor(t: string) {
+          this.text = t;
+        }
+      },
+    );
+    vi.stubGlobal('speechSynthesis', {
+      speaking: false,
+      pending: false,
+      paused: false,
+      speak: (u: { text: string }) => spoken.push(u.text),
+      cancel,
+      resume: () => {},
+      getVoices: () => [],
+      addEventListener: () => {},
+    });
+    const s = { ...defaultSettings };
+    cuePlayer.handle({ type: 'tenSeconds', segment: work }, s);
+    cuePlayer.handle({ type: 'pause' }, s);
+    vi.runAllTimers();
+    expect(spoken).toEqual([]);
+    expect(cancel).toHaveBeenCalled();
+
+    cancel.mockClear();
+    cuePlayer.handle({ type: 'tenSeconds', segment: work }, s);
+    cuePlayer.stop();
+    vi.runAllTimers();
+    expect(spoken).toEqual([]);
+    expect(cancel).toHaveBeenCalled();
+
+    // Speech still works afterwards.
+    cuePlayer.handle({ type: 'halfway', segment: work }, s);
+    vi.runAllTimers();
+    expect(spoken).toEqual(['Halfway']);
+  });
 });
 
 describe('phrases', () => {
@@ -119,6 +162,11 @@ describe('phrases', () => {
     expect(segmentPhrase({ ...work, label: 'Death by', detail: '15 burpees' })).toBe('15 burpees');
     expect(minutePhrase(5, 3)).toBe('5 minutes remaining');
     expect(minutePhrase(null, 4)).toBe('4 minutes');
+    expect(minutePhrase(null, 1)).toBe('1 minute');
+    expect(minutePhrase(null, 60)).toBe('1 hour');
+    expect(minutePhrase(null, 125)).toBe('2 hours 5 minutes');
+    expect(minutePhrase(61, 1)).toBe('1 hour 1 minute remaining');
+    expect(minutePhrase(1, 1)).toBe('One minute remaining');
   });
 });
 

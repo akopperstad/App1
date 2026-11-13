@@ -180,6 +180,11 @@ export interface Snapshot {
   plannedWorkMs: number | null;
   /** 0..1 overall progress (excl. prep), 0 if unknown. */
   overallProgress: number;
+  /**
+   * Planned work time still ahead (excl. prep) based on the plan position —
+   * stays consistent after next()/previous()/adjustCurrent(). null if open-ended.
+   */
+  remainingWorkMs: number | null;
   /** Next segment, if any. */
   next: Segment | null;
   laps: Lap[];

@@ -29,7 +29,7 @@ export function createFrameBus(): FrameBus {
 /**
  * Drives the engine:
  *  - requestAnimationFrame loop while running and visible (smooth ring/bars via the FrameBus),
- *  - a 250 ms interval so cues still fire when rAF is throttled (hidden tab / locked screen),
+ *  - a 100 ms interval so cues still fire when rAF is not running (hidden tab / locked screen),
  *  - an immediate tick when the page becomes visible again,
  *  - engine.subscribe for discrete changes (start, pause, laps, rounds...).
  * React state only updates when `keyOf(snapshot)` changes, i.e. when something visible changes.
@@ -78,9 +78,13 @@ export function useTimer(engine: TimerEngine, keyOf: (s: Snapshot) => string, bu
       schedule();
     });
 
+    // Background driver for cues when rAF is not running (hidden tab, rAF
+    // throttled). Pages that recently played audio are usually exempt from
+    // timer throttling, so 100 ms keeps worst-case beep latency low there; in
+    // the foreground the rAF loop already ticks, so this does nothing.
     const iv = window.setInterval(() => {
-      if (engine.getStatus() === 'running') update();
-    }, 250);
+      if (!raf && engine.getStatus() === 'running') update();
+    }, 100);
 
     const onVis = () => {
       if (document.visibilityState === 'visible') {

@@ -112,6 +112,11 @@ export function modeInfo(mode: Mode): ModeInfo {
   return MODES.find((m) => m.mode === mode)!;
 }
 
+/** Arrays in configs from storage may be missing (older versions) — never crash on them. */
+function list<T>(v: T[] | undefined): T[] {
+  return Array.isArray(v) ? v : [];
+}
+
 /** Short human summary of a config, e.g. "12 min", "8 × 20s / 10s". */
 export function describe(c: WorkoutConfig): string {
   switch (c.mode) {
@@ -122,7 +127,7 @@ export function describe(c: WorkoutConfig): string {
         : formatDuration(c.durationSec);
     case 'emom':
     {
-      const n = c.movements.filter((m) => m.trim()).length;
+      const n = list(c.movements).filter((m) => typeof m === 'string' && m.trim()).length;
       return `${c.rounds} × ${formatDuration(c.intervalSec)}` + (n ? ` · ${n} movement${n === 1 ? '' : 's'}` : '');
     }
     case 'tabata':
@@ -140,7 +145,7 @@ export function describe(c: WorkoutConfig): string {
     case 'deathby':
       return `${c.movement || 'Reps'} · +${c.increment} every ${formatDuration(c.intervalSec)}`;
     case 'custom':
-      return `${c.steps.length} steps × ${c.rounds}`;
+      return `${list(c.steps).length} steps × ${c.rounds}`;
   }
 }
 
@@ -176,8 +181,8 @@ export function totalSeconds(c: WorkoutConfig): number | null {
     case 'deathby':
       return c.intervalSec * Math.max(1, c.maxRounds);
     case 'custom': {
-      const steps = c.steps.filter((s) => s.durationSec >= 0);
-      if (steps.length === 0 || steps.some((s) => s.durationSec === 0)) return null;
+      const steps = list(c.steps).filter((s) => !!s && !(s.durationSec < 0));
+      if (steps.length === 0 || steps.some((s) => !(s.durationSec > 0))) return null;
       const rounds = Math.max(1, c.rounds);
       const per = steps.reduce((a, s) => a + s.durationSec, 0);
       return per * rounds + pos(c.restBetweenRoundsSec) * (rounds - 1);

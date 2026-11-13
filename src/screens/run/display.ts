@@ -153,5 +153,6 @@ export function displayKey(snap: Snapshot, config: WorkoutConfig, settings: Sett
     snap.roundsTapped,
     snap.segment.durationMs ?? 'n',
     snap.plannedWorkMs ?? 'n',
+    snap.remainingWorkMs === null ? 'n' : Math.ceil(snap.remainingWorkMs / 1000),
   ].join('|');
 }

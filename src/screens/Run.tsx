@@ -3,11 +3,12 @@ import { cuePlayer } from '../audio/cues';
 import { compile } from '../engine/compile';
 import { TimerEngine } from '../engine/engine';
 import { describe, modeInfo, totalSeconds } from '../engine/modes';
+import { normalizeConfig } from '../engine/normalize';
 import type { Cue, SegmentKind, Snapshot, WorkoutConfig } from '../engine/types';
 import { formatClock, formatDuration } from '../lib/format';
 import { useWakeLock } from '../lib/wakeLock';
 import { useNav } from '../nav';
-import { addHistory, settingsStore, useSettings } from '../state/store';
+import { saveHistory, settingsStore, useSettings } from '../state/store';
 import {
   announceFor,
   clockModel,
@@ -46,15 +47,24 @@ import './Run.css';
 type SheetKind = 'reset' | 'leave' | 'end' | null;
 type FinishReason = 'done' | 'end' | null;
 
-export function Run({ config }: { config: WorkoutConfig }) {
+export function Run({ config: rawConfig }: { config: WorkoutConfig }) {
   const nav = useNav();
   const settings = useSettings();
+  // Configs can come from storage (history / presets); never let a malformed one crash the run.
+  const [config] = useState<WorkoutConfig>(() => normalizeConfig(rawConfig) ?? { mode: 'stopwatch' });
   const info = modeInfo(config.mode);
 
   // ------------------------------------------------------------ engine
   const cueRef = useRef<(cue: Cue) => void>(() => {});
+  /** False once the screen is gone: a discarded / paused-on-unmount engine must stay silent. */
+  const mounted = useRef(false);
   const [engine] = useState(
-    () => new TimerEngine(compile(config, settingsStore.get().prepSec), { onCue: (c) => cueRef.current(c) }),
+    () =>
+      new TimerEngine(compile(config, settingsStore.get().prepSec), {
+        onCue: (c) => {
+          if (mounted.current) cueRef.current(c);
+        },
+      }),
   );
   const [bus] = useState(createFrameBus);
   const segments = engine.getSegments();
@@ -99,22 +109,28 @@ export function Run({ config }: { config: WorkoutConfig }) {
   };
 
   // ------------------------------------------------------------ session / history
-  const session = useRef<{ startedAt: number | null; saved: boolean; reason: FinishReason }>({
+  /**
+   * The session being recorded. `entryId` is set once something was written to
+   * history (a checkpoint or the final result); later writes update that entry
+   * in place, so a session is never stored twice. `final` = result recorded.
+   */
+  const session = useRef<{ startedAt: number | null; entryId: string | null; final: boolean; reason: FinishReason }>({
     startedAt: null,
-    saved: false,
+    entryId: null,
+    final: false,
     reason: null,
   });
   const [finishReason, setFinishReason] = useState<FinishReason>(null);
   const [sheet, setSheet] = useState<SheetKind>(null);
 
   const persist = useCallback(
-    (completed: boolean, natural: boolean) => {
+    (completed: boolean, natural: boolean, final = true) => {
       const ses = session.current;
-      if (ses.saved || ses.startedAt === null) return;
+      if (ses.final || ses.startedAt === null) return;
       const s = engine.snapshot();
-      if (!completed && s.workElapsedMs < 5000) return;
-      ses.saved = true;
-      addHistory(buildEntry(config, s, engine.getSegments(), ses.startedAt, completed, natural));
+      if (!completed && s.workElapsedMs < 5000 && ses.entryId === null) return;
+      ses.entryId = saveHistory(ses.entryId, buildEntry(config, s, engine.getSegments(), ses.startedAt, completed, natural));
+      if (final) ses.final = true;
     },
     [engine, config],
   );
@@ -125,21 +141,33 @@ export function Run({ config }: { config: WorkoutConfig }) {
     persist(reason !== 'end', reason === null);
   }, [status, persist]);
 
-  // Leaving by hardware back / unmount: keep what was done.
+  // Leaving by hardware back / unmount: keep what was done, and go quiet.
+  // Page hidden / closing: checkpoint the session (mobile browsers may kill a
+  // backgrounded PWA without ever firing pagehide); the final result later
+  // overwrites the checkpoint instead of adding a second entry.
   useEffect(() => {
-    const onHide = (e: PageTransitionEvent) => {
-      if (e.persisted) return;
+    mounted.current = true;
+    const checkpoint = () => {
       const st = engine.getStatus();
-      if (st === 'running' || st === 'paused') persist(false, false);
+      if (st === 'running' || st === 'paused') persist(false, false, false);
     };
-    window.addEventListener('pagehide', onHide);
+    const onVis = () => {
+      if (document.visibilityState === 'hidden') checkpoint();
+    };
+    window.addEventListener('pagehide', checkpoint);
+    document.addEventListener('visibilitychange', onVis);
     return () => {
-      window.removeEventListener('pagehide', onHide);
+      window.removeEventListener('pagehide', checkpoint);
+      document.removeEventListener('visibilitychange', onVis);
+      // Silence first: pausing on the way out must not click, and no queued
+      // announcement ("Ten seconds") may outlive the screen.
+      mounted.current = false;
       const st = engine.getStatus();
       if (st === 'running' || st === 'paused') {
         persist(false, false);
         engine.pause();
       }
+      cuePlayer.stop();
     };
   }, [engine, persist]);
 
@@ -160,14 +188,18 @@ export function Run({ config }: { config: WorkoutConfig }) {
     cuePlayer.unlock(); // must stay synchronous inside the user gesture (iOS)
     const st = engine.getStatus();
     if (st === 'finished') {
+      // Repeat: make sure the finished session is recorded before starting over
+      // (no-op if the finish effect already saved it).
+      const reason = session.current.reason;
+      persist(reason !== 'end', reason === null);
       engine.reset();
     }
     if (st === 'idle' || st === 'finished') {
-      session.current = { startedAt: Date.now(), saved: false, reason: null };
+      session.current = { startedAt: Date.now(), entryId: null, final: false, reason: null };
       setFinishReason(null);
     }
     engine.start();
-  }, [engine]);
+  }, [engine, persist]);
 
   const toggle = useCallback(() => {
     if (engine.getStatus() === 'running') engine.pause();
@@ -177,7 +209,8 @@ export function Run({ config }: { config: WorkoutConfig }) {
   const doReset = useCallback(() => {
     persist(false, false);
     engine.reset();
-    session.current = { startedAt: null, saved: false, reason: null };
+    cuePlayer.stop();
+    session.current = { startedAt: null, entryId: null, final: false, reason: null };
     setFinishReason(null);
     setSheet(null);
   }, [engine, persist]);
@@ -251,11 +284,18 @@ export function Run({ config }: { config: WorkoutConfig }) {
     back: () => void;
     fs: () => void;
     sheetOpen: boolean;
+    finished: boolean;
   } | null>(null);
   keys.current = {
     toggle,
-    next: () => engine.next(),
-    prev: () => engine.previous(),
+    // Single-segment modes have no segment navigation: → would silently finish
+    // (and save) a stopwatch, ← would restart it. Only "skip get ready" applies.
+    next: () => {
+      if (multiSeg || inPrep) engine.next();
+    },
+    prev: () => {
+      if (multiSeg) engine.previous();
+    },
     lap: () => {
       if (hasLaps && seg.kind !== 'prep') engine.lap();
     },
@@ -265,17 +305,25 @@ export function Run({ config }: { config: WorkoutConfig }) {
     back: requestBack,
     fs: toggleFs,
     sheetOpen: sheet !== null,
+    finished: status === 'finished',
   };
   useEffect(() => {
     const ignore = (e: KeyboardEvent) => {
       if (e.metaKey || e.ctrlKey || e.altKey) return true;
       const t = e.target as HTMLElement | null;
-      return !!t?.closest?.('input, textarea, select, [contenteditable="true"]');
+      if (t?.closest?.('input, textarea, select, [contenteditable="true"], [role="dialog"]')) return true;
+      // Any modal sheet (ours or a child's, e.g. "save as preset" on the summary) owns the keyboard.
+      return !!keys.current?.sheetOpen || !!document.querySelector('[aria-modal="true"]');
     };
+    /** Whether we took the last Space keydown (so its keyup must not also "click" a focused button). */
+    let spaceTaken = false;
     const onDown = (e: KeyboardEvent) => {
       const k = keys.current;
-      if (!k || e.defaultPrevented || ignore(e) || k.sheetOpen) return;
+      if (e.key === ' ') spaceTaken = false;
+      if (!k || e.defaultPrevented || ignore(e)) return;
       const key = e.key.length === 1 ? e.key.toLowerCase() : e.key;
+      // On the summary only Esc is global; Space / Enter activate the focused button natively.
+      if (k.finished && key !== 'Escape') return;
       let handled = true;
       switch (key) {
         case ' ':
@@ -302,11 +350,17 @@ export function Run({ config }: { config: WorkoutConfig }) {
         default:
           handled = false;
       }
-      if (handled) e.preventDefault();
+      if (handled) {
+        e.preventDefault();
+        if (key === ' ') spaceTaken = true;
+      }
     };
     // Stop a focused button from also "clicking" on Space keyup.
     const onUp = (e: KeyboardEvent) => {
-      if (e.key === ' ' && !ignore(e) && !keys.current?.sheetOpen) e.preventDefault();
+      if (e.key === ' ' && spaceTaken) {
+        spaceTaken = false;
+        e.preventDefault();
+      }
     };
     window.addEventListener('keydown', onDown);
     window.addEventListener('keyup', onUp);
@@ -341,7 +395,8 @@ export function Run({ config }: { config: WorkoutConfig }) {
     if (showRemaining) {
       stats.push({
         label: seg.kind === 'prep' ? 'Total' : mode === 'fortime' ? 'To cap' : 'Remaining',
-        value: formatClock(Math.max(0, planned - snap.workElapsedMs), { roundUp: true }).main,
+        // Plan position, not wall clock: stays right after ← / → / +time.
+        value: formatClock(snap.remainingWorkMs ?? planned, { roundUp: true }).main,
       });
     }
     if (snap.next && multiSeg) {

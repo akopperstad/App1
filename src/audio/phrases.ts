@@ -36,7 +36,15 @@ export function segmentPhrase(seg: Segment): string {
 
 export function minutePhrase(minutesRemaining: number | null, minutesElapsed: number): string {
   if (minutesRemaining !== null) {
-    return minutesRemaining === 1 ? 'One minute remaining' : `${plural(minutesRemaining, 'minute')} remaining`;
+    return minutesRemaining === 1 ? 'One minute remaining' : `${hoursMinutes(minutesRemaining)} remaining`;
   }
-  return plural(minutesElapsed, 'minute');
+  return hoursMinutes(minutesElapsed);
+}
+
+/** "5 minutes", "1 hour", "2 hours 5 minutes" — long stopwatch sessions. */
+function hoursMinutes(totalMin: number): string {
+  const h = Math.floor(totalMin / 60);
+  const m = totalMin % 60;
+  if (h === 0) return plural(m, 'minute');
+  return m ? `${plural(h, 'hour')} ${plural(m, 'minute')}` : plural(h, 'hour');
 }
