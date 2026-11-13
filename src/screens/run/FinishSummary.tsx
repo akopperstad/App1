@@ -30,6 +30,14 @@ export function FinishSummary({ config, snap, segments, completed, natural, onRe
   const splits = roundRows(snap.roundTapTimesMs);
   const avg = splits.length ? splits.reduce((a, r) => a + r.splitMs, 0) / splits.length : 0;
   const laps = snap.laps.map((l) => ({ index: l.index, atMs: l.atMs, splitMs: l.splitMs }));
+  // For Time that ran into its cap is "capped", not "complete" — that's how athletes log it.
+  const capped =
+    natural && config.mode === 'fortime' && config.capSec > 0 && snap.workElapsedMs >= config.capSec * 1000 - 50;
+  const eyebrow = capped ? 'Time cap reached' : completed ? 'Workout complete' : 'Workout ended';
+  // Segment progress only means something when the plan has several (non get-ready) segments.
+  const workSegs = segments.filter((s) => s.kind !== 'prep').length;
+  const prepSegs = segments.length - workSegs;
+  const segsDone = completed ? workSegs : Math.max(0, Math.min(snap.segmentIndex - prepSegs, workSegs));
   const roundsLabel = config.mode === 'deathby' ? 'Rounds survived' : 'Rounds';
   const roundsValue =
     config.mode === 'fortime' && config.targetRounds > 0 ? `${rounds} / ${config.targetRounds}` : String(rounds);
@@ -41,7 +49,7 @@ export function FinishSummary({ config, snap, segments, completed, natural, onRe
           <div className={`summary__badge${completed ? '' : ' is-partial'}`} aria-hidden="true">
             {completed ? <IconCheck size={30} /> : <IconStop size={24} />}
           </div>
-          <p className="summary__eyebrow">{completed ? 'Workout complete' : 'Workout ended'}</p>
+          <p className="summary__eyebrow">{eyebrow}</p>
           <h1 id="summary-title" className="summary__title">
             {config.name?.trim() || info.title}
           </h1>
@@ -92,11 +100,11 @@ export function FinishSummary({ config, snap, segments, completed, natural, onRe
               <span className="stat-card__value num">{laps.length}</span>
             </div>
           )}
-          {!showRounds && laps.length === 0 && (
+          {!showRounds && laps.length === 0 && workSegs > 1 && (
             <div className="stat-card">
               <span className="stat-card__label">Segments</span>
               <span className="stat-card__value num">
-                {Math.min(snap.segmentIndex + 1, snap.segmentCount)} / {snap.segmentCount}
+                {segsDone} / {workSegs}
               </span>
             </div>
           )}
@@ -132,7 +140,8 @@ export function FinishSummary({ config, snap, segments, completed, natural, onRe
             <label className="field">
               <span className="field__label">Preset name</span>
               <input
-                className="field__input"
+                className="ui-input field__input"
+                data-autofocus
                 value={name}
                 onChange={(e) => setName(e.target.value)}
                 placeholder={`My ${info.title}`}

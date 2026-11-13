@@ -26,16 +26,19 @@ export function SplitList({
   if (rows.length >= 3) {
     let min = Infinity;
     let max = -Infinity;
+    // Compare at displayed (tenths) precision so equal-looking splits aren't tagged.
     rows.forEach((r) => {
-      if (r.splitMs < min) {
-        min = r.splitMs;
+      const v = Math.floor(r.splitMs / 100);
+      if (v < min) {
+        min = v;
         fastest = r.index;
       }
-      if (r.splitMs > max) {
-        max = r.splitMs;
+      if (v > max) {
+        max = v;
         slowest = r.index;
       }
     });
+    if (min === max) fastest = slowest = -1;
   }
   let list = newestFirst ? [...rows].reverse() : rows;
   if (limit) list = list.slice(0, limit);

@@ -11,16 +11,41 @@ import { SettingsScreen } from './screens/Settings';
  * Screen stack synced with browser history so the hardware / browser back
  * button behaves naturally (important on Android and in installed PWAs).
  */
+const ROUTES = new Set(['home', 'configure', 'run', 'history', 'settings']);
+
+/** Each history entry carries the whole screen stack so reload / forward restore it. */
+interface NavState {
+  depth: number;
+  stack: Route[];
+}
+
+function readState(state: unknown): NavState | null {
+  const s = state as Partial<NavState> | null;
+  if (!s || !Array.isArray(s.stack) || typeof s.depth !== 'number') return null;
+  if (s.stack.length !== s.depth + 1 || s.stack[0]?.name !== 'home') return null;
+  if (!s.stack.every((r) => r && ROUTES.has(r.name))) return null;
+  return { depth: s.depth, stack: s.stack };
+}
+
+/**
+ * Screen stack synced with browser history so the hardware / browser back
+ * button behaves naturally (important on Android and in installed PWAs).
+ * The stack is mirrored into history.state, so a reload keeps you on the same
+ * screen and back / forward keep working one screen per press.
+ */
 export function App() {
-  const [stack, setStack] = useState<Route[]>([{ name: 'home' }]);
+  const [stack, setStack] = useState<Route[]>(() => readState(history.state)?.stack ?? [{ name: 'home' }]);
   const stackRef = useRef(stack);
   stackRef.current = stack;
 
   useEffect(() => {
-    history.replaceState({ depth: 0 }, '');
+    const cur = stackRef.current;
+    history.replaceState({ depth: cur.length - 1, stack: cur } satisfies NavState, '');
     const onPop = (e: PopStateEvent) => {
-      const depth = typeof e.state?.depth === 'number' ? e.state.depth : 0;
-      setStack((s) => s.slice(0, Math.max(1, depth + 1)));
+      const st = readState(e.state);
+      const next = st ? st.stack : stackRef.current.slice(0, 1);
+      stackRef.current = next;
+      setStack(next);
     };
     window.addEventListener('popstate', onPop);
     return () => window.removeEventListener('popstate', onPop);
@@ -30,13 +55,14 @@ export function App() {
     // Side effect kept outside the state updater: StrictMode runs updaters twice.
     const next = [...stackRef.current, route];
     stackRef.current = next;
-    history.pushState({ depth: next.length - 1 }, '');
+    history.pushState({ depth: next.length - 1, stack: next } satisfies NavState, '');
     setStack(next);
   }, []);
 
   const replace = useCallback((route: Route) => {
     const next = [...stackRef.current.slice(0, -1), route];
     stackRef.current = next;
+    history.replaceState({ depth: next.length - 1, stack: next } satisfies NavState, '');
     setStack(next);
   }, []);
 

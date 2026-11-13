@@ -15,6 +15,15 @@
     <link rel="apple-touch-icon" sizes="180x180" href="./icons/apple-touch-icon.png" />
     <link rel="icon" href="./icons/icon-192.png" type="image/png" sizes="192x192" />
     <title>Pulse Timer</title>
+    <script>
+      // Apply the saved theme before first paint (avoids a dark flash for light-theme users).
+      try {
+        var t = (JSON.parse(localStorage.getItem('pulse.settings.v1') || '{}') || {}).theme;
+        if (t !== 'light' && t !== 'dark') t = matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark';
+        document.documentElement.dataset.theme = t;
+        if (t === 'light') document.querySelector('meta[name="theme-color"]').setAttribute('content', '#f6f6f4');
+      } catch (e) {}
+    </script>
   </head>
   <body>
     <div id="root"></div>

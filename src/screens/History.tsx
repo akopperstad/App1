@@ -262,7 +262,10 @@ function EntryRow({
 }
 
 function SplitTable({ title, rows }: { title: string; rows: { label: string; at: number; split: number }[] }) {
-  const best = Math.min(...rows.map((r) => r.split));
+  // Guarded: Math.min() of an empty list is Infinity; ties at display precision aren't "best".
+  const tenthsOf = (ms: number) => Math.floor(ms / 100);
+  const best = rows.length ? Math.min(...rows.map((r) => tenthsOf(r.split))) : -1;
+  const allSame = rows.every((r) => tenthsOf(r.split) === best);
   return (
     <table className="hist-splits">
       <caption>{title}</caption>
@@ -275,7 +278,7 @@ function SplitTable({ title, rows }: { title: string; rows: { label: string; at:
       </thead>
       <tbody>
         {rows.map((r) => (
-          <tr key={r.label} className={rows.length > 1 && r.split === best ? 'is-best' : undefined}>
+          <tr key={r.label} className={rows.length > 1 && !allSame && tenthsOf(r.split) === best ? 'is-best' : undefined}>
             <th scope="row">{r.label}</th>
             <td className="num">{formatClockString(r.split, { tenths: true })}</td>
             <td className="num">{formatClockString(r.at)}</td>
