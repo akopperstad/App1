@@ -43,10 +43,10 @@ describe('compile: amrap', () => {
 });
 
 describe('compile: emom', () => {
-  it('labels EMOM for 60s, E2MOM / E90s otherwise', () => {
+  it('labels EMOM for 60s, E2MOM / E1:30 otherwise', () => {
     expect(compile({ mode: 'emom', intervalSec: 60, rounds: 2, movements: [] }, 0)[0].label).toBe('EMOM');
     expect(compile({ mode: 'emom', intervalSec: 120, rounds: 2, movements: [] }, 0)[0].label).toBe('E2MOM');
-    expect(compile({ mode: 'emom', intervalSec: 90, rounds: 2, movements: [] }, 0)[0].label).toBe('E90s');
+    expect(compile({ mode: 'emom', intervalSec: 90, rounds: 2, movements: [] }, 0)[0].label).toBe('E1:30');
   });
   it('rotates movements and turns a "Rest" movement into a rest segment', () => {
     const segs = compile(

@@ -225,6 +225,18 @@ export function Run({ config: rawConfig }: { config: WorkoutConfig }) {
     [engine],
   );
 
+  /** Count a round; For Time with a target finishes on the final round. */
+  const tapRound = useCallback(() => {
+    engine.tapRound();
+    if (
+      config.mode === 'fortime' &&
+      config.targetRounds > 0 &&
+      engine.snapshot().roundsTapped >= config.targetRounds
+    ) {
+      finishWith('done');
+    }
+  }, [engine, config, finishWith]);
+
   const goHome = useCallback(() => {
     const depth = typeof history.state?.depth === 'number' ? history.state.depth : 0;
     if (depth > 0) history.go(-depth);
@@ -233,6 +245,8 @@ export function Run({ config: rawConfig }: { config: WorkoutConfig }) {
 
   const leave = useCallback(() => {
     persist(false, false);
+    engine.setCueHandler(undefined); // leaving: no pause click / speech
+    cuePlayer.stop();
     engine.pause();
     nav.back();
   }, [engine, nav, persist]);
@@ -300,7 +314,7 @@ export function Run({ config: rawConfig }: { config: WorkoutConfig }) {
       if (hasLaps && seg.kind !== 'prep') engine.lap();
     },
     round: () => {
-      if (hasRounds && seg.kind !== 'prep') engine.tapRound();
+      if (hasRounds && seg.kind !== 'prep') tapRound();
     },
     back: requestBack,
     fs: toggleFs,
@@ -494,7 +508,7 @@ export function Run({ config: rawConfig }: { config: WorkoutConfig }) {
             times={snap.roundTapTimesMs}
             target={mode === 'fortime' && config.targetRounds > 0 ? config.targetRounds : undefined}
             disabled={inPrep}
-            onTap={() => engine.tapRound()}
+            onTap={tapRound}
             onUndo={() => engine.undoRound()}
           />
           {mode === 'fortime' && lapTile}

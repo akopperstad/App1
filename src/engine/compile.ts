@@ -224,7 +224,7 @@ function restSeg(durationMs: number, r: number, rounds: number, s: number, sets:
 
 function formatEvery(sec: number): string {
   if (sec % 60 === 0) return `${sec / 60}MOM`;
-  return `${sec}s`;
+  return formatClock(sec); // "E1:30", "E0:45" — reads cleanly when uppercased
 }
 
 function formatClock(totalSec: number): string {

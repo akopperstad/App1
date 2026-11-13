@@ -15,7 +15,6 @@ export function roundsFor(
   natural: boolean,
 ): number {
   if (config.mode === 'amrap' || config.mode === 'fortime') return snap.roundsTapped;
-  if (snap.roundsTapped > 0) return snap.roundsTapped;
   const finishedAll = natural && snap.status === 'finished';
   if (config.mode === 'deathby') {
     if (finishedAll) return segments.filter((s) => s.kind === 'work').length;
@@ -30,7 +29,12 @@ export function roundsFor(
       const cur = snap.segment.round ?? 1;
       return Math.max(0, cur - 1);
     }
-    return segments.slice(0, upto).filter((s) => s.kind === 'work').length;
+    // EMOM counts every completed interval (a "Rest" minute is still a round);
+    // interval / tabata count completed work intervals.
+    const done = segments.slice(0, upto).filter((s) => s.kind !== 'prep');
+    if (config.mode === 'emom') return done.length;
+    if (snap.roundsTapped > 0) return snap.roundsTapped;
+    return done.filter((s) => s.kind === 'work').length;
   }
   return 0;
 }

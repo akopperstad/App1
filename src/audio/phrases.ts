@@ -12,7 +12,7 @@ export function segmentPhrase(seg: Segment): string {
   if (seg.kind === 'rest') return label || 'Rest';
 
   // EMOM / E2MOM / E90s: "Round 4" (+ movement).
-  if (seg.round && (label === 'EMOM' || /^E\d+(MOM|s)$/.test(label))) {
+  if (seg.round && (label === 'EMOM' || /^E(\d+MOM|\d+:\d\d)$/.test(label))) {
     return detail ? `Round ${seg.round}. ${detail}` : `Round ${seg.round}`;
   }
   // Death by: "15 burpees".
