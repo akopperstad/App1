@@ -1,0 +1,20 @@
+{
+  "id": "./",
+  "name": "Pulse — Workout Timer",
+  "short_name": "Pulse",
+  "description": "The workout timer for AMRAP, EMOM, Tabata, intervals, For Time and more.",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "any",
+  "background_color": "#0a0b0d",
+  "theme_color": "#0a0b0d",
+  "lang": "en",
+  "categories": ["fitness", "health", "sports"],
+  "icons": [
+    { "src": "icons/icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any" },
+    { "src": "icons/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "icons/maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}
