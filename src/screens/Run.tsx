@@ -329,10 +329,10 @@ export function Run({ config }: { config: WorkoutConfig }) {
 
   const label = status === 'idle' ? info.title : phaseLabel(seg);
   const detail =
-    status === 'idle' ? config.name?.trim() || info.tagline : seg.detail && !/^Next:/.test(seg.detail) ? seg.detail : undefined;
+    status === 'idle' ? info.tagline : seg.detail && !/^Next:/.test(seg.detail) ? seg.detail : undefined;
   const subInfo =
     status === 'idle'
-      ? describe(config)
+      ? ''
       : seg.kind === 'prep'
         ? `${info.title} · ${describe(config)}`
         : roundInfo(seg, config) || (seg.detail && /^Next:/.test(seg.detail) ? seg.detail.replace(/^Next:\s*/, 'Up next: ') : '');
@@ -340,12 +340,13 @@ export function Run({ config }: { config: WorkoutConfig }) {
   const planned = snap.plannedWorkMs;
   const stats: { label: string; value: string; wide?: boolean }[] = [];
   if (status !== 'idle') {
-    if (multiSeg || planned === null || clock.down) {
-      stats.push({ label: 'Elapsed', value: formatClock(snap.workElapsedMs).main });
-    }
-    if (planned !== null && mode !== 'deathby') {
+    // Single-segment modes: only show the figure the big clock isn't already showing.
+    const showElapsed = seg.kind !== 'prep' && (multiSeg || clock.down);
+    const showRemaining = planned !== null && mode !== 'deathby' && (multiSeg || seg.kind === 'prep' || !clock.down);
+    if (showElapsed) stats.push({ label: 'Elapsed', value: formatClock(snap.workElapsedMs).main });
+    if (showRemaining) {
       stats.push({
-        label: mode === 'fortime' ? 'To cap' : 'Remaining',
+        label: seg.kind === 'prep' ? 'Total' : mode === 'fortime' ? 'To cap' : 'Remaining',
         value: formatClock(Math.max(0, planned - snap.workElapsedMs), { roundUp: true }).main,
       });
     }
@@ -358,6 +359,8 @@ export function Run({ config }: { config: WorkoutConfig }) {
 
   const total = totalSeconds(config);
   const overview: string[] = [];
+  const summary = describe(config);
+  if (total === null || summary !== formatDuration(total)) overview.push(summary);
   if (total !== null) overview.push(`Total ${formatDuration(total)}`);
   else overview.push('Open-ended');
   if (workSegCount > 1) overview.push(`${workSegCount} segments`);
@@ -406,10 +409,22 @@ export function Run({ config }: { config: WorkoutConfig }) {
     </HoldButton>
   );
 
-  const doneTile = (
-    <button type="button" className="tile tile--done" onClick={() => finishWith('done')} disabled={!active || inPrep}>
-      <IconCheck size={28} />
-      <span>Done</span>
+  const doneCircle = (
+    <button
+      type="button"
+      className="transport__side transport__done"
+      onClick={() => finishWith('done')}
+      disabled={!active || inPrep}
+      aria-label="Done — finish workout"
+    >
+      <IconCheck size={30} />
+    </button>
+  );
+
+  const lapTile = (
+    <button type="button" className="tile tile--icon" onClick={() => engine.lap()} disabled={inPrep} aria-label="Lap">
+      <IconFlag size={24} />
+      {snap.laps.length > 0 && <span className="tile__badge num">{snap.laps.length}</span>}
     </button>
   );
 
@@ -433,19 +448,16 @@ export function Run({ config }: { config: WorkoutConfig }) {
             onTap={() => engine.tapRound()}
             onUndo={() => engine.undoRound()}
           />
-          {doneIsPrimary && doneTile}
+          {mode === 'fortime' && lapTile}
         </>
       );
     } else if (mode === 'stopwatch') {
       actions = (
-        <>
-          <button type="button" className="tile tile--lap" onClick={() => engine.lap()} disabled={inPrep}>
-            <IconFlag size={26} />
-            <span>Lap</span>
-            {snap.laps.length > 0 && <span className="tile__badge num">{snap.laps.length}</span>}
-          </button>
-          {doneTile}
-        </>
+        <button type="button" className="tile tile--lap" onClick={() => engine.lap()} disabled={inPrep}>
+          <IconFlag size={26} />
+          <span>Lap</span>
+          {snap.laps.length > 0 && <span className="tile__badge num">{snap.laps.length}</span>}
+        </button>
       );
     } else if (canAdjust) {
       actions = (
@@ -485,13 +497,9 @@ export function Run({ config }: { config: WorkoutConfig }) {
           <IconNext size={28} />
         </button>
       );
-    } else if (mode === 'fortime') {
-      right = (
-        <button type="button" className="transport__side" onClick={() => engine.lap()} aria-label="Lap">
-          <IconFlag size={26} />
-        </button>
-      );
-    } else if (mode === 'countdown') {
+    } else if (doneIsPrimary) {
+      right = doneCircle;
+    } else if (mode === 'countdown' || mode === 'amrap') {
       right = (
         <HoldButton
           className="transport__side hold"
@@ -634,7 +642,19 @@ export function Run({ config }: { config: WorkoutConfig }) {
                 {multiSeg && (
                   <div className="utility">
                     {resetBtn('pill hold', true)}
-                    {!doneIsPrimary && endBtn}
+                    {doneIsPrimary ? (
+                      <button
+                        type="button"
+                        className="pill pill--done"
+                        onClick={() => finishWith('done')}
+                        disabled={!active || inPrep}
+                      >
+                        <IconCheck size={18} />
+                        <span>Done</span>
+                      </button>
+                    ) : (
+                      endBtn
+                    )}
                   </div>
                 )}
               </>

@@ -17,7 +17,7 @@ export interface ClockModel {
 
 const DIGIT_EM = 0.6;
 const COLON_EM = 0.3;
-const TENTHS_EM = 0.62;
+const TENTHS_EM = 0.45;
 
 /** Estimate width (in em) of a clock string like "12:04" or "1:05:09". */
 function widthEm(main: string, tenths: boolean): number {
