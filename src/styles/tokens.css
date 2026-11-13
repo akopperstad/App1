@@ -1,0 +1,173 @@
+/*
+ * Pulse design tokens.
+ * Dark-first, high-contrast, built to be read from across a gym.
+ * Light theme is supported via [data-theme="light"] or system preference.
+ */
+:root {
+  color-scheme: dark;
+
+  /* Surfaces */
+  --bg: #0a0b0d;
+  --bg-elev: #131519;
+  --bg-elev-2: #1b1e24;
+  --bg-press: #23272e;
+  --line: #262a31;
+  --line-strong: #353a43;
+
+  /* Text */
+  --fg: #f4f5f7;
+  --fg-2: #a9afba;
+  --fg-3: #6c7380;
+  --fg-on-accent: #0a0b0d;
+
+  /* Phase colours (used by the run screen) */
+  --work: #ff5b3a;
+  --work-soft: rgba(255, 91, 58, 0.14);
+  --rest: #2fd3b4;
+  --rest-soft: rgba(47, 211, 180, 0.14);
+  --prep: #ffc23d;
+  --prep-soft: rgba(255, 194, 61, 0.14);
+  --done: #8b7bff;
+  --done-soft: rgba(139, 123, 255, 0.16);
+
+  /* Mode accents */
+  --mode-amrap: #ff5b3a;
+  --mode-emom: #ffa53d;
+  --mode-fortime: #ff3d6e;
+  --mode-tabata: #3dd9ff;
+  --mode-interval: #2fd3b4;
+  --mode-deathby: #c86bff;
+  --mode-custom: #8b7bff;
+  --mode-countdown: #ffd23d;
+  --mode-stopwatch: #9be15d;
+
+  --danger: #ff4d5e;
+  --focus: #7ab8ff;
+
+  /* Type */
+  --font: ui-sans-serif, -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Segoe UI', Roboto,
+    'Helvetica Neue', Arial, sans-serif;
+  --font-mono: ui-monospace, 'SF Mono', 'JetBrains Mono', Menlo, Consolas, monospace;
+
+  --fs-xs: 0.75rem;
+  --fs-sm: 0.875rem;
+  --fs-md: 1rem;
+  --fs-lg: 1.25rem;
+  --fs-xl: 1.75rem;
+  --fs-2xl: 2.5rem;
+
+  /* Space & shape */
+  --s-1: 4px;
+  --s-2: 8px;
+  --s-3: 12px;
+  --s-4: 16px;
+  --s-5: 24px;
+  --s-6: 32px;
+  --s-7: 48px;
+  --r-sm: 10px;
+  --r-md: 16px;
+  --r-lg: 24px;
+  --r-pill: 999px;
+
+  --shadow: 0 10px 30px rgba(0, 0, 0, 0.35);
+  --ease: cubic-bezier(0.2, 0.8, 0.2, 1);
+  --dur: 180ms;
+
+  --safe-top: env(safe-area-inset-top, 0px);
+  --safe-bottom: env(safe-area-inset-bottom, 0px);
+  --safe-left: env(safe-area-inset-left, 0px);
+  --safe-right: env(safe-area-inset-right, 0px);
+
+  --content-max: 560px;
+}
+
+:root[data-theme='light'] {
+  color-scheme: light;
+  --bg: #f6f6f4;
+  --bg-elev: #ffffff;
+  --bg-elev-2: #efefec;
+  --bg-press: #e4e4e0;
+  --line: #e2e2de;
+  --line-strong: #cfcfca;
+  --fg: #111214;
+  --fg-2: #4f5560;
+  --fg-3: #858b96;
+  --fg-on-accent: #ffffff;
+  --work: #e8431f;
+  --work-soft: rgba(232, 67, 31, 0.12);
+  --rest: #0e9e84;
+  --rest-soft: rgba(14, 158, 132, 0.12);
+  --prep: #d99a00;
+  --prep-soft: rgba(217, 154, 0, 0.14);
+  --done: #5b4ae6;
+  --done-soft: rgba(91, 74, 230, 0.12);
+  --shadow: 0 8px 24px rgba(17, 18, 20, 0.08);
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#root {
+  height: 100%;
+}
+
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--fg);
+  font-family: var(--font);
+  font-size: var(--fs-md);
+  line-height: 1.4;
+  -webkit-font-smoothing: antialiased;
+  -webkit-tap-highlight-color: transparent;
+  overscroll-behavior: none;
+  touch-action: manipulation;
+}
+
+button,
+input,
+select,
+textarea {
+  font: inherit;
+  color: inherit;
+}
+
+button {
+  cursor: pointer;
+  border: 0;
+  background: none;
+  padding: 0;
+}
+
+:focus-visible {
+  outline: 2px solid var(--focus);
+  outline-offset: 2px;
+}
+
+.num {
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: 'tnum' 1;
+}
+
+.visually-hidden {
+  position: absolute !important;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    transition-duration: 0.001ms !important;
+  }
+}
