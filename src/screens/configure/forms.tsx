@@ -217,8 +217,8 @@ function DeathByForm({ config: c, onChange }: FormProps<DeathByConfig>) {
   const repsAt = (r: number) => c.startReps + (r - 1) * c.increment;
   return (
     <>
-      <Section title="Movement">
-        <Row label="Movement" htmlFor="deathby-move" stacked>
+      <Section title="Workout">
+        <Row label="Movement" hint="Reps grow every interval until you can't keep up" htmlFor="deathby-move" stacked>
           <input
             id="deathby-move"
             className="ui-input"

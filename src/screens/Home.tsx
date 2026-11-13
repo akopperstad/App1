@@ -17,6 +17,23 @@ import './Home.css';
 
 const accentStyle = (accent: string) => ({ '--accent': accent }) as CSSProperties;
 
+/** Very compact summary for the mode-card pill. */
+function pill(c: WorkoutConfig): string {
+  switch (c.mode) {
+    case 'amrap':
+      return c.sets > 1 ? `${c.sets} × ${formatDuration(c.durationSec)}` : formatDuration(c.durationSec);
+    case 'emom':
+      return `${c.rounds} × ${formatDuration(c.intervalSec)}`;
+    case 'tabata':
+    case 'interval':
+      return `${c.rounds} × ${formatDuration(c.workSec)}/${formatDuration(c.restSec)}`;
+    case 'deathby':
+      return `${c.movement || 'Reps'} +${c.increment}`;
+    default:
+      return describe(c);
+  }
+}
+
 function summary(c: WorkoutConfig): string {
   const total = totalSeconds(c);
   const d = describe(c);
@@ -96,7 +113,7 @@ export function Home() {
                   </span>
                   <span className="mode-card__tag">{m.tagline}</span>
                   <span className={`mode-card__last num${cfg ? '' : ' is-default'}`}>
-                    {cfg ? summary(cfg) : describe(m.defaults)}
+                    {pill(cfg ?? m.defaults)}
                   </span>
                 </button>
               );

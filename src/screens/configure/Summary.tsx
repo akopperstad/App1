@@ -19,12 +19,12 @@ export function Summary({ config }: { config: WorkoutConfig }) {
 
   let big: string;
   let caption: string;
-  if (total !== null) {
-    big = formatClockString(total * 1000);
-    caption = 'Total time';
-  } else if (config.mode === 'deathby') {
+  if (config.mode === 'deathby') {
     big = formatClockString(config.intervalSec * config.maxRounds * 1000);
     caption = 'Max time · until failure';
+  } else if (total !== null) {
+    big = formatClockString(total * 1000);
+    caption = 'Total time';
   } else {
     big = 'Open';
     caption = config.mode === 'stopwatch' ? 'Counts up · no limit' : 'Open-ended · you finish it';
@@ -35,13 +35,17 @@ export function Summary({ config }: { config: WorkoutConfig }) {
   if (config.mode === 'deathby') {
     count = config.maxRounds;
     countLabel = 'max rounds';
+  } else if (config.mode === 'fortime') {
+    count = config.targetRounds;
+    countLabel = 'target rounds';
   } else {
     count = segments.length;
     countLabel = count === 1 ? 'interval' : 'intervals';
   }
+  const showCount = count > 1 || (config.mode === 'fortime' && count > 0);
 
   const blocks = segments.slice(0, MAX_BLOCKS);
-  const showBar = segments.length > 1 || segments[0]?.durationMs !== null;
+  const showBar = segments.length > 1;
 
   return (
     <section className="cfg-summary" aria-label="Workout summary">
@@ -50,21 +54,12 @@ export function Summary({ config }: { config: WorkoutConfig }) {
           <div className="cfg-summary__big num">{big}</div>
           <div className="cfg-summary__cap">{caption}</div>
         </div>
-        <dl className="cfg-summary__stats">
-          <div>
-            <dt>{countLabel}</dt>
-            <dd className="num">{count}</dd>
+        {showCount && (
+          <div className="cfg-summary__count">
+            <div className="cfg-summary__countnum num">{count}</div>
+            <div className="cfg-summary__cap">{countLabel}</div>
           </div>
-          {workMs > 0 && restMs > 0 && (
-            <div>
-              <dt>work / rest</dt>
-              <dd className="num">
-                {formatDuration(Math.round(workMs / 1000))}
-                <span> / {formatDuration(Math.round(restMs / 1000))}</span>
-              </dd>
-            </div>
-          )}
-        </dl>
+        )}
       </div>
       {showBar && (
         <div className="cfg-timeline" role="img" aria-label={`Timeline of ${segments.length} intervals`}>
@@ -78,9 +73,15 @@ export function Summary({ config }: { config: WorkoutConfig }) {
         </div>
       )}
       {showBar && (
-        <div className="cfg-legend" aria-hidden>
-          <span className="is-work">Work</span>
-          {restMs > 0 && <span className="is-rest">Rest</span>}
+        <div className="cfg-legend">
+          <span className="is-work">
+            Work{workMs > 0 && <b className="num">{formatDuration(Math.round(workMs / 1000))}</b>}
+          </span>
+          {restMs > 0 && (
+            <span className="is-rest">
+              Rest<b className="num">{formatDuration(Math.round(restMs / 1000))}</b>
+            </span>
+          )}
           {segments.some((s) => s.durationMs === null) && <span className="is-open">Untimed</span>}
         </div>
       )}

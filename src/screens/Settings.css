@@ -1,0 +1,65 @@
+.settings .ui-row--stacked {
+  flex-direction: row;
+  flex-wrap: wrap;
+  align-items: center;
+}
+.settings .ui-row--stacked .ui-row__text {
+  flex: 1 1 0;
+}
+.settings .ui-row--stacked .ui-row__control {
+  flex: 1 1 100%;
+}
+
+.settings__volume {
+  padding: 0 var(--s-4) var(--s-3) calc(var(--s-4) + 32px + var(--s-3));
+  transition: opacity var(--dur) var(--ease);
+}
+.settings__volume.is-off {
+  opacity: 0.4;
+}
+.settings__volume-label {
+  display: flex;
+  justify-content: space-between;
+  font-size: var(--fs-sm);
+  color: var(--fg-2);
+  font-weight: 600;
+}
+.settings__test {
+  padding: var(--s-3) var(--s-4) var(--s-4);
+  border-top: 1px solid var(--line);
+}
+
+.settings__about {
+  margin-top: var(--s-6);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  text-align: center;
+  color: var(--fg-3);
+  font-size: var(--fs-sm);
+}
+.settings__about strong {
+  color: var(--fg);
+  font-size: var(--fs-lg);
+  font-weight: 900;
+  letter-spacing: -0.03em;
+}
+.settings__about p {
+  margin: var(--s-2) 0 0;
+  max-width: 280px;
+}
+.settings__logo {
+  display: grid;
+  place-items: center;
+  width: 52px;
+  height: 52px;
+  margin-bottom: var(--s-2);
+  border-radius: 16px;
+  color: var(--fg-on-accent);
+  background: linear-gradient(135deg, var(--work), var(--mode-fortime));
+  box-shadow: 0 8px 24px -8px color-mix(in srgb, var(--work) 80%, transparent);
+}
+:root[data-theme='light'] .settings__logo {
+  color: var(--bg-elev);
+}

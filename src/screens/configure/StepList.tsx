@@ -85,7 +85,7 @@ export function StepList({ steps, onChange }: StepListProps) {
                     checked={!untimed}
                     onChange={(on) => update(i, { durationSec: on ? 60 : 0 })}
                   />
-                  <span>{untimed ? 'Untimed — counts up' : 'Timed'}</span>
+                  <span>{untimed ? 'Untimed' : 'Timed'}</span>
                 </label>
                 <div className="cfg-step__tools">
                   <IconButton icon="chevronUp" label={`Move step ${i + 1} up`} size={18} disabled={i === 0} onClick={() => move(i, -1)} />

@@ -1,6 +1,6 @@
 import { useMemo, useState, type CSSProperties } from 'react';
 import { describe, modeInfo } from '../engine/modes';
-import { formatClockString, formatDuration } from '../lib/format';
+import { formatClockString } from '../lib/format';
 import { useNav } from '../nav';
 import { clearHistory, deleteHistory, useHistory, type HistoryEntry } from '../state/store';
 import { Button, Icon, Sheet, TopBar } from '../components/ui';
@@ -53,6 +53,16 @@ function computeStats(list: HistoryEntry[], now: number) {
   return { weekCount: week.length, weekMs, streak };
 }
 
+/** "43m", "1h 12m", "45s" — compact enough for a stat tile. */
+function compactTime(ms: number): string {
+  const sec = Math.round(ms / 1000);
+  const h = Math.floor(sec / 3600);
+  const m = Math.floor((sec % 3600) / 60);
+  if (h > 0) return m ? `${h}h ${m}m` : `${h}h`;
+  if (m > 0) return `${m}m`;
+  return `${sec}s`;
+}
+
 function splits(times: number[]): { at: number; split: number }[] {
   return times.map((t, i) => ({ at: t, split: t - (i > 0 ? times[i - 1] : 0) }));
 }
@@ -95,7 +105,7 @@ export function History() {
 
         <div className="hist-stats" role="group" aria-label="This week">
           <Stat icon="bolt" value={String(stats.weekCount)} label={stats.weekCount === 1 ? 'Workout this week' : 'Workouts this week'} tone="work" />
-          <Stat icon="timer" value={stats.weekMs > 0 ? formatDuration(Math.round(stats.weekMs / 1000)) : '0m'} label="Time this week" tone="rest" />
+          <Stat icon="timer" value={stats.weekMs > 0 ? compactTime(stats.weekMs) : '0m'} label="Time this week" tone="rest" />
           <Stat icon="flame" value={String(stats.streak)} label="Day streak" tone="prep" />
         </div>
 

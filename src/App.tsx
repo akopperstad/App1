@@ -27,15 +27,17 @@ export function App() {
   }, []);
 
   const go = useCallback((route: Route) => {
-    setStack((s) => {
-      const next = [...s, route];
-      history.pushState({ depth: next.length - 1 }, '');
-      return next;
-    });
+    // Side effect kept outside the state updater: StrictMode runs updaters twice.
+    const next = [...stackRef.current, route];
+    stackRef.current = next;
+    history.pushState({ depth: next.length - 1 }, '');
+    setStack(next);
   }, []);
 
   const replace = useCallback((route: Route) => {
-    setStack((s) => [...s.slice(0, -1), route]);
+    const next = [...stackRef.current.slice(0, -1), route];
+    stackRef.current = next;
+    setStack(next);
   }, []);
 
   const back = useCallback(() => {
@@ -49,19 +51,19 @@ export function App() {
 
   return (
     <NavContext.Provider value={nav}>
-      <Screen route={route} />
+      <Screen route={route} depth={stack.length} />
     </NavContext.Provider>
   );
 }
 
-function Screen({ route }: { route: Route }) {
+function Screen({ route, depth }: { route: Route; depth: number }) {
   switch (route.name) {
     case 'home':
       return <Home />;
     case 'configure':
-      return <Configure key={route.mode} mode={route.mode} initial={route.initial} />;
+      return <Configure key={depth} mode={route.mode} initial={route.initial} />;
     case 'run':
-      return <Run config={route.config} />;
+      return <Run key={depth} config={route.config} />;
     case 'history':
       return <History />;
     case 'settings':

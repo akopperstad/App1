@@ -92,7 +92,7 @@
   font-weight: 800;
   letter-spacing: 0.12em;
   text-transform: uppercase;
-  color: var(--accent);
+  color: var(--accent-ink, var(--accent));
 }
 .home__quick-name {
   font-size: var(--fs-xl);
@@ -195,7 +195,7 @@
   transition: transform var(--dur) var(--ease), color var(--dur) var(--ease);
 }
 .mode-card:hover .mode-card__chev {
-  color: var(--accent);
+  color: var(--accent-ink, var(--accent));
   transform: translateX(2px);
 }
 .mode-card__tag {
@@ -209,7 +209,7 @@
   border-radius: var(--r-pill);
   font-size: var(--fs-xs);
   font-weight: 700;
-  color: var(--accent);
+  color: var(--accent-ink, var(--accent));
   background: color-mix(in srgb, var(--accent) 14%, transparent);
   max-width: 100%;
   white-space: nowrap;
@@ -262,7 +262,7 @@
   width: 40px;
   height: 40px;
   border-radius: 50%;
-  color: var(--accent);
+  color: var(--accent-ink, var(--accent));
   background: color-mix(in srgb, var(--accent) 16%, transparent);
 }
 .preset-row__dot svg {
@@ -359,7 +359,7 @@
   font-weight: 800;
   letter-spacing: 0.1em;
   text-transform: uppercase;
-  color: var(--accent);
+  color: var(--accent-ink, var(--accent));
 }
 .bench-card__name {
   font-weight: 800;
@@ -396,4 +396,7 @@
 .home__confirm {
   margin: 0;
   color: var(--fg-2);
+}
+:root[data-theme='light'] .home__play {
+  color: var(--fg);
 }

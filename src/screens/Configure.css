@@ -23,7 +23,7 @@
   font-weight: 800;
   letter-spacing: 0.14em;
   text-transform: uppercase;
-  color: var(--accent);
+  color: var(--accent-ink, var(--accent));
 }
 .cfg__dot {
   width: 8px;
@@ -83,27 +83,13 @@
   text-transform: uppercase;
   color: var(--fg-3);
 }
-.cfg-summary__stats {
-  margin: 0;
-  display: flex;
-  gap: var(--s-5);
+.cfg-summary__count {
   text-align: right;
 }
-.cfg-summary__stats dt {
-  font-size: var(--fs-xs);
-  font-weight: 700;
-  letter-spacing: 0.1em;
-  text-transform: uppercase;
-  color: var(--fg-3);
-}
-.cfg-summary__stats dd {
-  margin: 2px 0 0;
-  font-size: var(--fs-lg);
+.cfg-summary__countnum {
+  font-size: var(--fs-xl);
   font-weight: 800;
-}
-.cfg-summary__stats dd span {
-  color: var(--fg-3);
-  font-weight: 700;
+  line-height: 1;
 }
 
 .cfg-timeline {
@@ -149,6 +135,10 @@
   display: inline-flex;
   align-items: center;
   gap: 6px;
+}
+.cfg-legend b {
+  color: var(--fg-2);
+  font-weight: 700;
 }
 .cfg-legend span::before {
   content: '';
@@ -203,7 +193,7 @@
   border-radius: 50%;
   font-size: var(--fs-xs);
   font-weight: 800;
-  color: var(--accent);
+  color: var(--accent-ink, var(--accent));
   background: color-mix(in srgb, var(--accent) 16%, transparent);
 }
 .cfg-moves__item.is-rest .cfg-moves__idx {
@@ -231,7 +221,7 @@
 }
 .cfg-moves__add .ui-btn {
   padding: 0 var(--s-3);
-  color: var(--accent);
+  color: var(--accent-ink, var(--accent));
 }
 .cfg-moves__hint {
   margin: var(--s-1) 0 0;
@@ -382,7 +372,7 @@
   width: 28px;
   height: 28px;
   border-radius: 50%;
-  color: var(--accent);
+  color: var(--accent-ink, var(--accent));
   background: color-mix(in srgb, var(--accent) 16%, transparent);
 }
 
@@ -415,7 +405,7 @@
 .cfg-ladder__n {
   font-size: var(--fs-lg);
   font-weight: 800;
-  color: var(--accent);
+  color: var(--accent-ink, var(--accent));
 }
 
 /* ---------- bottom bar ---------- */

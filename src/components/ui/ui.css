@@ -327,7 +327,6 @@
 }
 .ui-toggle.is-on .ui-toggle__knob {
   transform: translateX(20px);
-  background: var(--fg-on-accent);
 }
 :root[data-theme='light'] .ui-toggle__knob,
 :root[data-theme='light'] .ui-toggle.is-on .ui-toggle__knob {
@@ -423,7 +422,7 @@
   letter-spacing: -0.03em;
   line-height: 1;
   padding: var(--s-3) 0 var(--s-2);
-  color: var(--accent, var(--fg));
+  color: var(--accent-ink, var(--accent, var(--fg)));
 }
 .ui-dpick__cols {
   display: grid;
@@ -486,7 +485,7 @@
 .ui-chip.is-active {
   border-color: var(--accent, var(--fg));
   background: color-mix(in srgb, var(--accent, var(--fg)) 14%, var(--bg-elev-2));
-  color: var(--accent, var(--fg));
+  color: var(--accent-ink, var(--accent, var(--fg)));
 }
 
 /* ---------- sheet ---------- */
@@ -653,6 +652,10 @@
   border-color: var(--accent, var(--focus));
   background: var(--bg-elev);
 }
+.ui-input:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent, var(--focus)) 25%, transparent);
+}
 
 /* ---------- range ---------- */
 .ui-range {
@@ -693,4 +696,18 @@
 }
 :root[data-theme='light'] .ui-range::-webkit-slider-thumb {
   background: var(--bg-elev);
+}
+
+/* ---------- accent ink ----------
+ * Mode accents are tuned for dark backgrounds. Anything that sets --accent
+ * inline also gets --accent-ink: a text-safe variant (darkened in light theme).
+ */
+[style*='--accent'] {
+  --accent-ink: var(--accent);
+}
+:root[data-theme='light'] [style*='--accent'] {
+  --accent-ink: color-mix(in srgb, var(--accent) 60%, var(--fg));
+}
+:root[data-theme='light'] .ui-btn--primary {
+  --btn-fg: var(--fg);
 }
