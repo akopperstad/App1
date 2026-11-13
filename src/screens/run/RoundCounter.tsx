@@ -31,7 +31,9 @@ export function RoundCounter({ count, times, target, disabled, onTap, onUndo }: 
           <span className="rounds__cta">
             <IconPlus size={18} /> Round
           </span>
-          <span className="rounds__split num">{last !== null ? `last ${formatClockString(last)}` : 'tap each round'}</span>
+          <span className="rounds__split num">
+            {last !== null ? `last ${formatClockString(last)}` : 'tap each round'}
+          </span>
         </span>
       </button>
       <button

@@ -1,15 +1,7 @@
 import { useEffect, useId, useRef, type ReactNode } from 'react';
 
 /** Modal bottom sheet (centred dialog on wide screens). Esc / backdrop closes. */
-export function Sheet({
-  title,
-  children,
-  onClose,
-}: {
-  title: string;
-  children: ReactNode;
-  onClose: () => void;
-}) {
+export function Sheet({ title, children, onClose }: { title: string; children: ReactNode; onClose: () => void }) {
   const id = useId();
   const panel = useRef<HTMLDivElement>(null);
   const closeRef = useRef(onClose);

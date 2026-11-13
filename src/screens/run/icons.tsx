@@ -23,7 +23,11 @@ type P = { size?: number };
 
 export const IconPlay = ({ size }: P) => (
   <Svg size={size}>
-    <path d="M7 4.8v14.4a1 1 0 0 0 1.5.86l12-7.2a1 1 0 0 0 0-1.72l-12-7.2A1 1 0 0 0 7 4.8Z" fill="currentColor" stroke="none" />
+    <path
+      d="M7 4.8v14.4a1 1 0 0 0 1.5.86l12-7.2a1 1 0 0 0 0-1.72l-12-7.2A1 1 0 0 0 7 4.8Z"
+      fill="currentColor"
+      stroke="none"
+    />
   </Svg>
 );
 export const IconPause = ({ size }: P) => (

@@ -55,7 +55,7 @@ export function clockModel(
   const seg = idle ? idleSegment : snap.segment;
   const down = countsDown(seg, config, settings);
   const elapsed = idle ? 0 : snap.segmentElapsedMs;
-  const remaining = idle ? seg.durationMs ?? 0 : snap.segmentRemainingMs ?? 0;
+  const remaining = idle ? (seg.durationMs ?? 0) : (snap.segmentRemainingMs ?? 0);
   const tenths = !down && settings.showTenths;
   const parts = down ? formatClock(remaining, { roundUp: true }) : formatClock(elapsed, { tenths });
   const tpl = templateFor(seg, down, elapsed);
@@ -100,7 +100,12 @@ export function roundInfo(seg: Segment, config: WorkoutConfig): string {
 
 /** Short label for a segment, for "Next up". */
 export function segmentShort(seg: Segment): string {
-  const name = seg.kind === 'prep' ? 'Get ready' : seg.detail && seg.kind === 'work' && !/^Next:/.test(seg.detail) ? seg.detail : seg.label;
+  const name =
+    seg.kind === 'prep'
+      ? 'Get ready'
+      : seg.detail && seg.kind === 'work' && !/^Next:/.test(seg.detail)
+        ? seg.detail
+        : seg.label;
   return name;
 }
 
@@ -135,12 +140,7 @@ export function firstWork(segments: readonly Segment[]): Segment {
 }
 
 /** Stable key: changes only when something visible (outside the rAF-painted ring/bars) changes. */
-export function displayKey(
-  snap: Snapshot,
-  config: WorkoutConfig,
-  settings: Settings,
-  idleSegment: Segment,
-): string {
+export function displayKey(snap: Snapshot, config: WorkoutConfig, settings: Settings, idleSegment: Segment): string {
   const c = clockModel(snap, config, settings, idleSegment);
   return [
     snap.status,

@@ -36,87 +36,85 @@ export function FinishSummary({ config, snap, segments, completed, natural, onRe
 
   return (
     <section className="summary" aria-labelledby="summary-title">
-      <div className="summary__hero">
-        <div className={`summary__badge${completed ? '' : ' is-partial'}`} aria-hidden="true">
-          {completed ? <IconCheck size={30} /> : <IconStop size={24} />}
+      <div className="summary__left">
+        <div className="summary__hero">
+          <div className={`summary__badge${completed ? '' : ' is-partial'}`} aria-hidden="true">
+            {completed ? <IconCheck size={30} /> : <IconStop size={24} />}
+          </div>
+          <p className="summary__eyebrow">{completed ? 'Workout complete' : 'Workout ended'}</p>
+          <h1 id="summary-title" className="summary__title">
+            {config.name?.trim() || info.title}
+          </h1>
+          <p className="summary__sub">
+            {info.title} · {describe(config)}
+          </p>
+          <div className="summary__time num" aria-label={`Total time ${formatClockString(snap.workElapsedMs)}`}>
+            {total.main}
+            <span className="summary__tenths">.{total.tenths}</span>
+          </div>
+          <p className="summary__time-label">Total time</p>
         </div>
-        <p className="summary__eyebrow">{completed ? 'Workout complete' : 'Workout ended'}</p>
-        <h1 id="summary-title" className="summary__title">
-          {config.name?.trim() || info.title}
-        </h1>
-        <p className="summary__sub">
-          {info.title} · {describe(config)}
-        </p>
-        <div className="summary__time num" aria-label={`Total time ${formatClockString(snap.workElapsedMs)}`}>
-          {total.main}
-          <span className="summary__tenths">.{total.tenths}</span>
+        <div className="summary__actions">
+          <button type="button" className="btn btn--primary" onClick={onRepeat}>
+            <IconRepeat size={22} /> Repeat
+          </button>
+          <button type="button" className="btn" onClick={() => setNaming(true)} disabled={saved !== null}>
+            <IconBookmark size={20} /> {saved ? 'Saved' : 'Save preset'}
+          </button>
+          <button type="button" className="btn" onClick={onHome}>
+            <IconHome size={20} /> Home
+          </button>
         </div>
-        <p className="summary__time-label">Total time</p>
+        {saved && (
+          <p className="summary__toast" role="status">
+            Saved “{saved}” to your presets
+          </p>
+        )}
       </div>
 
-      <div className="summary__stats">
-        {showRounds && (
-          <div className="stat-card">
-            <span className="stat-card__label">{roundsLabel}</span>
-            <span className="stat-card__value num">{roundsValue}</span>
-          </div>
-        )}
+      <div className="summary__right">
+        <div className="summary__stats">
+          {showRounds && (
+            <div className="stat-card">
+              <span className="stat-card__label">{roundsLabel}</span>
+              <span className="stat-card__value num">{roundsValue}</span>
+            </div>
+          )}
+          {splits.length > 0 && (
+            <div className="stat-card">
+              <span className="stat-card__label">Avg round</span>
+              <span className="stat-card__value num">{formatClockString(avg)}</span>
+            </div>
+          )}
+          {laps.length > 0 && (
+            <div className="stat-card">
+              <span className="stat-card__label">Laps</span>
+              <span className="stat-card__value num">{laps.length}</span>
+            </div>
+          )}
+          {!showRounds && laps.length === 0 && (
+            <div className="stat-card">
+              <span className="stat-card__label">Segments</span>
+              <span className="stat-card__value num">
+                {Math.min(snap.segmentIndex + 1, snap.segmentCount)} / {snap.segmentCount}
+              </span>
+            </div>
+          )}
+        </div>
+
         {splits.length > 0 && (
-          <div className="stat-card">
-            <span className="stat-card__label">Avg round</span>
-            <span className="stat-card__value num">{formatClockString(avg)}</span>
+          <div className="summary__list">
+            <h2 className="summary__h">Round splits</h2>
+            <SplitList rows={splits} label="Round splits" />
           </div>
         )}
         {laps.length > 0 && (
-          <div className="stat-card">
-            <span className="stat-card__label">Laps</span>
-            <span className="stat-card__value num">{laps.length}</span>
-          </div>
-        )}
-        {!showRounds && laps.length === 0 && (
-          <div className="stat-card">
-            <span className="stat-card__label">Segments</span>
-            <span className="stat-card__value num">
-              {Math.min(snap.segmentIndex + 1, snap.segmentCount)} / {snap.segmentCount}
-            </span>
+          <div className="summary__list">
+            <h2 className="summary__h">Laps</h2>
+            <SplitList rows={laps} label="Laps" />
           </div>
         )}
       </div>
-
-      {splits.length > 0 && (
-        <div className="summary__list">
-          <h2 className="summary__h">Round splits</h2>
-          <SplitList rows={splits} label="Round splits" />
-        </div>
-      )}
-      {laps.length > 0 && (
-        <div className="summary__list">
-          <h2 className="summary__h">Laps</h2>
-          <SplitList rows={laps} label="Laps" />
-        </div>
-      )}
-
-      <div className="summary__actions">
-        <button type="button" className="btn btn--primary" onClick={onRepeat}>
-          <IconRepeat size={22} /> Repeat
-        </button>
-        <button
-          type="button"
-          className="btn"
-          onClick={() => setNaming(true)}
-          disabled={saved !== null}
-        >
-          <IconBookmark size={20} /> {saved ? 'Saved' : 'Save preset'}
-        </button>
-        <button type="button" className="btn" onClick={onHome}>
-          <IconHome size={20} /> Home
-        </button>
-      </div>
-      {saved && (
-        <p className="summary__toast" role="status">
-          Saved “{saved}” to your presets
-        </p>
-      )}
 
       {naming && (
         <Sheet title="Save as preset" onClose={() => setNaming(false)}>

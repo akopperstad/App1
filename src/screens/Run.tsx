@@ -62,10 +62,7 @@ export function Run({ config }: { config: WorkoutConfig }) {
   const workSegCount = useMemo(() => segments.filter((s) => s.kind !== 'prep').length, [segments]);
   const multiSeg = workSegCount > 1;
 
-  const keyOf = useCallback(
-    (s: Snapshot) => displayKey(s, config, settingsStore.get(), idleSeg),
-    [config, idleSeg],
-  );
+  const keyOf = useCallback((s: Snapshot) => displayKey(s, config, settingsStore.get(), idleSeg), [config, idleSeg]);
   const snap = useTimer(engine, keyOf, bus);
   const { status } = snap;
   const active = status === 'running' || status === 'paused';
@@ -322,20 +319,17 @@ export function Run({ config }: { config: WorkoutConfig }) {
   // ------------------------------------------------------------ display model
   const phase = phaseOf(snap);
   const clock = clockModel(snap, config, settings, idleSeg);
-  const ring = useCallback(
-    (s: Snapshot) => ringValue(s, config, settingsStore.get(), idleSeg),
-    [config, idleSeg],
-  );
+  const ring = useCallback((s: Snapshot) => ringValue(s, config, settingsStore.get(), idleSeg), [config, idleSeg]);
 
   const label = status === 'idle' ? info.title : phaseLabel(seg);
-  const detail =
-    status === 'idle' ? info.tagline : seg.detail && !/^Next:/.test(seg.detail) ? seg.detail : undefined;
+  const detail = status === 'idle' ? info.tagline : seg.detail && !/^Next:/.test(seg.detail) ? seg.detail : undefined;
   const subInfo =
     status === 'idle'
       ? ''
       : seg.kind === 'prep'
         ? `${info.title} · ${describe(config)}`
-        : roundInfo(seg, config) || (seg.detail && /^Next:/.test(seg.detail) ? seg.detail.replace(/^Next:\s*/, 'Up next: ') : '');
+        : roundInfo(seg, config) ||
+          (seg.detail && /^Next:/.test(seg.detail) ? seg.detail.replace(/^Next:\s*/, 'Up next: ') : '');
 
   const planned = snap.plannedWorkMs;
   const stats: { label: string; value: string; wide?: boolean }[] = [];
