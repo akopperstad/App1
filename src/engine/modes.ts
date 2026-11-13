@@ -121,8 +121,10 @@ export function describe(c: WorkoutConfig): string {
             (c.restBetweenSetsSec ? ` · ${formatDuration(c.restBetweenSetsSec)} rest` : '')
         : formatDuration(c.durationSec);
     case 'emom':
-      return `${c.rounds} × ${formatDuration(c.intervalSec)}` +
-        (c.movements.length ? ` · ${c.movements.filter(Boolean).length} movements` : '');
+    {
+      const n = c.movements.filter((m) => m.trim()).length;
+      return `${c.rounds} × ${formatDuration(c.intervalSec)}` + (n ? ` · ${n} movement${n === 1 ? '' : 's'}` : '');
+    }
     case 'tabata':
     case 'interval':
       return (
@@ -142,18 +144,28 @@ export function describe(c: WorkoutConfig): string {
   }
 }
 
-/** Planned total seconds (excl. prep), or null when open-ended. */
+/**
+ * Planned total seconds (excl. prep), or null when open-ended.
+ * Must always equal `plannedWorkMs(compile(c, 0)) / 1000` — mirrors compile()'s
+ * clamping (rounds/sets >= 1, rests only when > 0). For Death By this is the
+ * maximum length (all `maxRounds` intervals), since the engine plans for it.
+ */
 export function totalSeconds(c: WorkoutConfig): number | null {
+  const pos = (n: number) => (n > 0 ? n : 0);
   switch (c.mode) {
-    case 'amrap':
-      return c.durationSec * c.sets + c.restBetweenSetsSec * Math.max(0, c.sets - 1);
+    case 'amrap': {
+      const sets = Math.max(1, c.sets);
+      return c.durationSec * sets + pos(c.restBetweenSetsSec) * (sets - 1);
+    }
     case 'emom':
-      return c.intervalSec * c.rounds;
+      return c.intervalSec * Math.max(1, c.rounds);
     case 'tabata':
     case 'interval': {
-      const perSet = c.workSec * c.rounds + c.restSec * Math.max(0, c.rounds - 1);
-      const between = c.sets > 1 ? (c.restBetweenSetsSec || c.restSec) * (c.sets - 1) : 0;
-      return perSet * c.sets + between;
+      const rounds = Math.max(1, c.rounds);
+      const sets = Math.max(1, c.sets);
+      const perSet = c.workSec * rounds + pos(c.restSec) * (rounds - 1);
+      const between = (c.restBetweenSetsSec > 0 ? c.restBetweenSetsSec : pos(c.restSec)) * (sets - 1);
+      return perSet * sets + between;
     }
     case 'fortime':
       return c.capSec > 0 ? c.capSec : null;
@@ -162,11 +174,13 @@ export function totalSeconds(c: WorkoutConfig): number | null {
     case 'stopwatch':
       return null;
     case 'deathby':
-      return null;
+      return c.intervalSec * Math.max(1, c.maxRounds);
     case 'custom': {
-      if (c.steps.some((s) => s.durationSec === 0)) return null;
-      const per = c.steps.reduce((a, s) => a + s.durationSec, 0);
-      return per * c.rounds + c.restBetweenRoundsSec * Math.max(0, c.rounds - 1);
+      const steps = c.steps.filter((s) => s.durationSec >= 0);
+      if (steps.length === 0 || steps.some((s) => s.durationSec === 0)) return null;
+      const rounds = Math.max(1, c.rounds);
+      const per = steps.reduce((a, s) => a + s.durationSec, 0);
+      return per * rounds + pos(c.restBetweenRoundsSec) * (rounds - 1);
     }
   }
 }

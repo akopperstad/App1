@@ -154,6 +154,9 @@ export function compile(config: WorkoutConfig, prepSec: number): Segment[] {
     case 'custom': {
       const rounds = Math.max(1, config.rounds);
       const steps = config.steps.filter((st) => st.durationSec >= 0);
+      // No steps → no rounds (a bare round-rest sequence would be nonsense);
+      // the fallback open-ended segment below takes over.
+      if (steps.length === 0) break;
       for (let r = 1; r <= rounds; r++) {
         steps.forEach((st) => {
           const timed = st.durationSec > 0;
