@@ -44,6 +44,10 @@ jobs:
           distribution: temurin
           java-version: 21
       - uses: android-actions/setup-android@v3
+        with:
+          # Default installs the removed 'tools' package and fails; the runner
+          # image already ships the SDK, so just ensure platform-tools.
+          packages: 'platform-tools'
       - uses: gradle/actions/setup-gradle@v4
       - run: npm ci
       - run: npm run cap:sync
