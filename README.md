@@ -43,7 +43,7 @@ and, through **Capacitor 8**, as native **iOS** and **Android** apps.
 ```bash
 npm ci
 npm run dev          # Vite dev server
-npm test             # vitest: 228 tests in 17 files (engine timing, cues, i18n, storage, sharing, backup, native shims, screens)
+npm test             # vitest: 275 tests in 20 files (engine timing, cues, i18n, storage, sharing, backup, native shims, screens)
 npx tsc -p .         # type check
 npm run build        # production web build -> dist/
 npm run store:check  # store listing field limits (store/listing/*.md)

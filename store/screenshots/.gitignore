@@ -1,9 +1,1 @@
 .raw/
-# TEMP until final re-render (avoid committing ~137 MB twice)
-/ios-6.9/
-/ios-6.5/
-/ipad-13/
-/play-phone/
-/play-tablet-7/
-/play-tablet-10/
-/overview-*.png
