@@ -247,9 +247,12 @@
 .home__quick-meta {
   font-size: var(--fs-sm);
   color: var(--fg-2);
-  white-space: nowrap;
+  /* Up to two lines: translated summaries ("2 Sätze · 1 min Pause") run long. */
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
   overflow: hidden;
-  text-overflow: ellipsis;
 }
 .home__play {
   flex: none;
@@ -281,6 +284,7 @@
 }
 .mode-card {
   position: relative;
+  container-type: inline-size;
   display: flex;
   flex-direction: column;
   align-items: flex-start;
@@ -343,13 +347,20 @@
 }
 .mode-card__title {
   max-width: 100%;
-  font-size: 0.9375rem;
+  /* Long single-word names (Egendefinert, Stoppeklokke, Countdown) shrink to fit
+     the card instead of truncating: --chars is the longest word (Home.tsx). */
+  font-size: min(0.9375rem, calc(100cqi / (var(--chars, 8) * 0.6)));
   font-weight: 800;
   letter-spacing: -0.015em;
   line-height: 1.15;
-  white-space: nowrap;
+  /* Two-word names ("Cuenta atrás", "Compte à rebours") wrap to a second line. */
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
   overflow: hidden;
-  text-overflow: ellipsis;
+  overflow-wrap: break-word;
+  hyphens: auto;
 }
 .mode-card__tag {
   display: none;
@@ -431,9 +442,12 @@
 .preset-row__meta {
   font-size: var(--fs-sm);
   color: var(--fg-3);
-  white-space: nowrap;
+  /* Up to two lines: translated summaries ("2 Sätze · 1 min Pause") run long. */
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
   overflow: hidden;
-  text-overflow: ellipsis;
 }
 .preset-row__play {
   flex: none;
@@ -555,6 +569,10 @@
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+}
+.bench-card__mode.is-long {
+  font-size: 10px;
+  letter-spacing: 0.04em;
 }
 .bench-card__name {
   font-weight: 800;

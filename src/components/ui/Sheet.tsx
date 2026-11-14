@@ -1,5 +1,6 @@
-import { useEffect, useId, useLayoutEffect, useRef, type ReactNode } from 'react';
+import { useEffect, useId, useLayoutEffect, useRef, useState, type ReactNode } from 'react';
 import { createPortal } from 'react-dom';
+import { useT } from '../../i18n';
 import { IconButton } from './Button';
 import { Icon, type IconName } from './Icon';
 
@@ -18,9 +19,41 @@ export interface SheetProps {
   footer?: ReactNode;
 }
 
-/** Bottom sheet on mobile, centred dialog on wider screens. */
+/** Exit animation length — keep in sync with `.ui-sheet-root.is-closing` in ui.css. */
+const CLOSE_MS = 220;
+
+function reducedMotion(): boolean {
+  try {
+    return window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  } catch {
+    return false;
+  }
+}
+
+/**
+ * Bottom sheet on mobile, centred dialog on wider screens. Closing animates
+ * out (slide down / fade) before unmounting — instantly with reduced motion.
+ * While it animates out the sheet is inert (aria-hidden, no pointer events)
+ * and keeps showing what it showed when it was open.
+ */
 export function Sheet({ open, onClose, title, children, footer }: SheetProps) {
+  const { t } = useT();
   const panel = useRef<HTMLDivElement>(null);
+  const [shown, setShown] = useState(open);
+  if (open && !shown) setShown(true);
+  const closing = shown && !open;
+  const last = useRef({ title, children, footer });
+  if (open) last.current = { title, children, footer };
+
+  useEffect(() => {
+    if (!closing) return;
+    if (reducedMotion()) {
+      setShown(false);
+      return;
+    }
+    const timer = window.setTimeout(() => setShown(false), CLOSE_MS);
+    return () => window.clearTimeout(timer);
+  }, [closing]);
   const titleId = useId();
   const closeRef = useRef(onClose);
   closeRef.current = onClose;
@@ -73,30 +106,31 @@ export function Sheet({ open, onClose, title, children, footer }: SheetProps) {
     };
   }, [open]);
 
-  if (!open) return null;
+  if (!shown) return null;
+  const view = open ? { title, children, footer } : last.current;
 
   return createPortal(
-    <div className="ui-sheet-root">
-      <div className="ui-sheet-backdrop" onClick={onClose} />
+    <div className={`ui-sheet-root${closing ? ' is-closing' : ''}`} aria-hidden={closing || undefined}>
+      <div className="ui-sheet-backdrop" onClick={closing ? undefined : onClose} />
       <div
         ref={panel}
         className="ui-sheet"
         role="dialog"
-        aria-modal="true"
-        aria-labelledby={title ? titleId : undefined}
+        aria-modal={closing ? undefined : true}
+        aria-labelledby={view.title ? titleId : undefined}
         tabIndex={-1}
       >
         <div className="ui-sheet__grabber" aria-hidden />
-        {title && (
+        {view.title && (
           <div className="ui-sheet__head">
             <h2 id={titleId} className="ui-sheet__title">
-              {title}
+              {view.title}
             </h2>
-            <IconButton icon="close" label="Close" variant="filled" size={18} onClick={onClose} />
+            <IconButton icon="close" label={t('common.close')} variant="filled" size={18} onClick={onClose} />
           </div>
         )}
-        <div className="ui-sheet__body">{children}</div>
-        {footer && <div className="ui-sheet__foot">{footer}</div>}
+        <div className="ui-sheet__body">{view.children}</div>
+        {view.footer && <div className="ui-sheet__foot">{view.footer}</div>}
       </div>
     </div>,
     document.body,

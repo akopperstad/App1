@@ -88,7 +88,7 @@ describe('spoken phrases', () => {
       for (const s of segs) expect(p.segment(s).length).toBeGreaterThan(0);
     }
     const nbp = spokenPhrases('nb');
-    expect(nbp.segment(segs[2])).toBe('Hvile');
+    expect(nbp.segment(segs[2])).toBe('Settpause');
     expect(nbp.segment(work)).toBe('Runde 3 av 8');
     expect(nbp.minute(5, 0)).toBe('5 minutter igjen');
     expect(spokenPhrases('de').minute(null, 61)).toBe('1 Stunde 1 Minute');

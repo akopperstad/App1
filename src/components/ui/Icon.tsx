@@ -30,6 +30,8 @@ export type IconName =
   | 'trophy'
   | 'share'
   | 'sparkle'
+  | 'bell'
+  | 'music'
   | 'mode-amrap'
   | 'mode-emom'
   | 'mode-fortime'
@@ -151,6 +153,19 @@ const paths: Record<IconName, ReactNode> = {
       <path d="M7 4h10v5a5 5 0 0 1-10 0z" />
       <path d="M7 6H4.5v1.5A3.5 3.5 0 0 0 8 11M17 6h2.5v1.5A3.5 3.5 0 0 1 16 11" />
       <path d="M12 14v3.5M8.5 20.5h7M9.5 20.5l.5-3h4l.5 3" />
+    </>
+  ),
+  bell: (
+    <>
+      <path d="M6 16.5V11a6 6 0 0 1 12 0v5.5l1.5 1.5h-15z" />
+      <path d="M10 20.5a2 2 0 0 0 4 0" />
+    </>
+  ),
+  music: (
+    <>
+      <path d="M9 18V5.5l10-2V16" />
+      <circle cx="6.5" cy="18" r="2.5" />
+      <circle cx="16.5" cy="16" r="2.5" />
     </>
   ),
   sparkle: <path d="M12 3l1.8 5.2L19 10l-5.2 1.8L12 17l-1.8-5.2L5 10l5.2-1.8zM19 16l.7 1.8 1.8.7-1.8.7L19 21l-.7-1.8-1.8-.7 1.8-.7z" />,

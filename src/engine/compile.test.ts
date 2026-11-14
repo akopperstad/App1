@@ -2,6 +2,10 @@ import { describe, expect, it } from 'vitest';
 import { compile, plannedWorkMs } from './compile';
 import { MODES, BUILT_IN_PRESETS, describe as describeConfig, totalSeconds } from './modes';
 import type { Segment, WorkoutConfig } from './types';
+import { translator } from '../i18n/core';
+import { spokenPhrases } from '../i18n/spoken';
+import { segmentPhrase } from '../audio/phrases';
+import { localizedDefaults } from './modes';
 
 const kinds = (segs: Segment[]) => segs.map((s) => s.kind);
 const durs = (segs: Segment[]) => segs.map((s) => s.durationMs);
@@ -22,7 +26,7 @@ describe('compile: amrap', () => {
   it('single block', () => {
     const segs = compile({ mode: 'amrap', durationSec: 720, sets: 1, restBetweenSetsSec: 60 }, 0);
     expect(segs).toEqual([
-      { kind: 'work', label: 'AMRAP', durationMs: 720_000, direction: 'down', set: 1, totalSets: 1 },
+      { kind: 'work', type: 'amrap', label: 'AMRAP', durationMs: 720_000, direction: 'down', set: 1, totalSets: 1 },
     ]);
   });
   it('multiple blocks with rest only between', () => {
@@ -125,7 +129,7 @@ describe('compile: interval / tabata', () => {
 describe('compile: fortime / countdown / stopwatch', () => {
   it('fortime with cap counts up and is timed', () => {
     const [s] = compile({ mode: 'fortime', capSec: 600, targetRounds: 3 }, 0);
-    expect(s).toEqual({ kind: 'work', label: 'For time', detail: 'Cap 10:00', durationMs: 600_000, direction: 'up' });
+    expect(s).toEqual({ kind: 'work', type: 'fortime', label: 'For time', detail: 'Cap 10:00', durationMs: 600_000, direction: 'up' });
   });
   it('fortime without cap is open-ended', () => {
     const [s] = compile({ mode: 'fortime', capSec: 0, targetRounds: 0 }, 0);
@@ -135,7 +139,7 @@ describe('compile: fortime / countdown / stopwatch', () => {
   });
   it('countdown', () => {
     expect(compile({ mode: 'countdown', durationSec: 90 }, 0)).toEqual([
-      { kind: 'work', label: 'Countdown', durationMs: 90_000, direction: 'down' },
+      { kind: 'work', type: 'countdown', label: 'Countdown', durationMs: 90_000, direction: 'down' },
     ]);
   });
   it('stopwatch', () => {
@@ -332,5 +336,73 @@ describe('describe()', () => {
       '10 × 1 min · 1 movement',
     );
     expect(describeConfig({ mode: 'emom', intervalSec: 60, rounds: 10, movements: ['', ' '] })).toBe('10 × 1 min');
+  });
+});
+
+describe('translated compile (nb)', () => {
+  const nb = translator('nb');
+  it('labels and details come out in Norwegian, types stay language-independent', () => {
+    const segs = compile({ mode: 'interval', workSec: 30, restSec: 10, rounds: 2, sets: 2, restBetweenSetsSec: 60, movements: [] }, 10, nb);
+    expect(segs.map((s) => [s.type, s.label])).toEqual([
+      ['prep', 'Gjør deg klar'],
+      ['work', 'Jobb'],
+      ['rest', 'Pause'],
+      ['work', 'Jobb'],
+      ['setRest', 'Settpause'],
+      ['work', 'Jobb'],
+      ['rest', 'Pause'],
+      ['work', 'Jobb'],
+    ]);
+    expect(segs[4].detail).toBe('Neste: sett 2 av 2');
+    expect(compile({ mode: 'fortime', capSec: 1200, targetRounds: 0 }, 0, nb)[0].detail).toBe('Cap 20:00');
+    expect(compile({ mode: 'deathby', intervalSec: 60, startReps: 15, increment: 1, maxRounds: 1, movement: '' }, 0, nb)[0].detail).toBe('15 reps');
+    expect(compile({ mode: 'amrap', durationSec: 60, sets: 2, restBetweenSetsSec: 30 }, 0, translator('de'))[1].detail).toBe('Gleich: AMRAP 2 von 2');
+  });
+
+  it('a "Rest" movement / step in any language is a translated rest', () => {
+    const emom = compile({ mode: 'emom', intervalSec: 60, rounds: 3, movements: ['Burpees', 'Pause', 'Rest'] }, 0, nb);
+    expect(emom.map((s) => [s.kind, s.type, s.label])).toEqual([
+      ['work', 'emom', 'EMOM'],
+      ['rest', 'rest', 'Pause'],
+      ['rest', 'rest', 'Pause'],
+    ]);
+    const custom = compile(localizedDefaults('custom', nb), 0, nb);
+    expect(custom.slice(0, 2).map((s) => [s.type, s.label])).toEqual([
+      ['step', 'Løp 400 m'],
+      ['rest', 'Pause'],
+    ]);
+    expect(compile(localizedDefaults('custom'), 0)[0].label).toBe('Run 400m');
+  });
+
+  it('speech follows seg.type, so translated labels can not break it', () => {
+    const configs: WorkoutConfig[] = [
+      ...MODES.map((m) => m.defaults),
+      ...BUILT_IN_PRESETS.map((b) => b.config),
+      { mode: 'interval', workSec: 30, restSec: 10, rounds: 2, sets: 2, restBetweenSetsSec: 60, movements: ['Row'] },
+      { mode: 'custom', rounds: 2, restBetweenRoundsSec: 20, steps: [{ id: 'a', label: 'Row', kind: 'work', durationSec: 30 }] },
+    ];
+    for (const c of configs) {
+      // English: typed segments speak exactly what the (label-based) audio layer says.
+      for (const s of compile(c, 5)) expect(spokenPhrases('en').segment(s)).toBe(segmentPhrase(s));
+      // Norwegian segments speak Norwegian built-ins — never the raw label of a rest.
+      const p = spokenPhrases('nb');
+      for (const s of compile(c, 5, nb)) {
+        const spoken = p.segment(s);
+        expect(spoken.length).toBeGreaterThan(0);
+        expect(spoken).not.toMatch(/\b(Get ready|Work|Rest|Round|Go)\b/);
+      }
+    }
+    const nbp = spokenPhrases('nb');
+    const tab = compile(MODES.find((m) => m.mode === 'tabata')!.defaults, 10, nb);
+    expect(tab.slice(0, 3).map((s) => nbp.segment(s))).toEqual(['Gjør deg klar', 'Runde 1 av 8', 'Pause']);
+  });
+});
+
+describe('describe() translated', () => {
+  it('uses the translator for units and words', () => {
+    const de = translator('de');
+    expect(describeConfig({ mode: 'amrap', durationSec: 300, sets: 3, restBetweenSetsSec: 60 }, de)).toBe('3 × 5\u00a0min · 1\u00a0min Pause');
+    expect(describeConfig({ mode: 'fortime', capSec: 0, targetRounds: 0 }, translator('nb'))).toBe('Uten cap');
+    expect(describeConfig({ mode: 'custom', rounds: 3, restBetweenRoundsSec: 0, steps: [] }, translator('fr'))).toBe('0 étape × 3');
   });
 });

@@ -1,17 +1,19 @@
 import { useRef } from 'react';
 import { Button, IconButton } from '../../components/ui';
+import { isRestWord, useT } from '../../i18n';
 
 export interface MovementListProps {
   value: string[];
   onChange: (v: string[]) => void;
-  /** What a row represents, e.g. "minute" or "work round". */
-  unit: string;
+  /** What a row rotates with: each EMOM interval, or each work round. */
+  unit: 'interval' | 'round';
   allowRest?: boolean;
   max?: number;
 }
 
 /** Editable, reorderable list of movement names that rotate each round. */
 export function MovementList({ value, onChange, unit, allowRest = true, max = 20 }: MovementListProps) {
+  const { t } = useT();
   const listRef = useRef<HTMLOListElement>(null);
 
   const focusLast = () =>
@@ -35,7 +37,7 @@ export function MovementList({ value, onChange, unit, allowRest = true, max = 20
       {value.length > 0 && (
         <ol className="cfg-moves__list" ref={listRef}>
           {value.map((m, i) => {
-            const isRest = m.trim().toLowerCase() === 'rest';
+            const isRest = isRestWord(m);
             return (
               <li key={i} className={`cfg-moves__item${isRest ? ' is-rest' : ''}`}>
                 <span className="cfg-moves__idx num" aria-hidden>
@@ -44,22 +46,22 @@ export function MovementList({ value, onChange, unit, allowRest = true, max = 20
                 <input
                   className="ui-input cfg-moves__input"
                   value={m}
-                  placeholder={`Movement ${i + 1}`}
-                  aria-label={`Movement ${i + 1}`}
+                  placeholder={t('mv.placeholder', { n: i + 1 })}
+                  aria-label={t('mv.placeholder', { n: i + 1 })}
                   maxLength={40}
                   enterKeyHint="next"
                   onChange={(e) => set(i, e.target.value)}
                 />
                 <div className="cfg-moves__tools">
-                  <IconButton icon="chevronUp" label={`Move movement ${i + 1} up`} size={18} disabled={i === 0} onClick={() => move(i, -1)} />
+                  <IconButton icon="chevronUp" label={t('mv.up', { n: i + 1 })} size={18} disabled={i === 0} onClick={() => move(i, -1)} />
                   <IconButton
                     icon="chevronDown"
-                    label={`Move movement ${i + 1} down`}
+                    label={t('mv.down', { n: i + 1 })}
                     size={18}
                     disabled={i === value.length - 1}
                     onClick={() => move(i, 1)}
                   />
-                  <IconButton icon="close" label={`Remove movement ${i + 1}`} size={18} onClick={() => remove(i)} />
+                  <IconButton icon="close" label={t('mv.remove', { n: i + 1 })} size={18} onClick={() => remove(i)} />
                 </div>
               </li>
             );
@@ -76,18 +78,20 @@ export function MovementList({ value, onChange, unit, allowRest = true, max = 20
             focusLast();
           }}
         >
-          Add movement
+          {t('mv.add')}
         </Button>
         {allowRest && (
-          <Button variant="ghost" icon="plus" disabled={value.length >= max} onClick={() => onChange([...value, 'Rest'])}>
-            Add rest
+          <Button variant="ghost" icon="plus" disabled={value.length >= max} onClick={() => onChange([...value, t('seg.rest')])}>
+            {t('mv.addRest')}
           </Button>
         )}
       </div>
       <p className="cfg-moves__hint">
         {value.length === 0
-          ? `Optional — add movements to rotate one per ${unit}.`
-          : `Rotates one per ${unit}${value.length > 1 ? `, repeating every ${value.length}` : ''}.`}
+          ? t(unit === 'interval' ? 'mv.empty.interval' : 'mv.empty.round')
+          : value.length > 1
+            ? t(unit === 'interval' ? 'mv.rotateN.interval' : 'mv.rotateN.round', { n: value.length })
+            : t(unit === 'interval' ? 'mv.rotate.interval' : 'mv.rotate.round')}
       </p>
     </div>
   );

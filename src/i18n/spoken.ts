@@ -8,7 +8,7 @@
  *
  * Phrases stay short — they are spoken over loud music mid-workout.
  */
-import type { Segment } from '../engine/types';
+import type { Segment, SegmentType } from '../engine/types';
 import type { Lang } from './index';
 
 export interface SpokenPhrases {
@@ -49,6 +49,8 @@ interface Base {
   finish: string;
   soundCheck: string;
   oneMinuteRemaining: string;
+  setRest: string;
+  roundRest: string;
   round: (n: number) => string;
   roundOf: (n: number, total: number) => string;
   amrapSet: (n: number) => string;
@@ -70,6 +72,8 @@ const BASES: Record<Lang, Base> = {
     finish: 'Time! Great work',
     soundCheck: 'Sound check',
     oneMinuteRemaining: 'One minute remaining',
+    setRest: 'Set rest',
+    roundRest: 'Round rest',
     round: (n) => `Round ${n}`,
     roundOf: (n, t) => `Round ${n} of ${t}`,
     amrapSet: (n) => `AMRAP ${n}. Go`,
@@ -81,7 +85,7 @@ const BASES: Record<Lang, Base> = {
     speechLang: 'nb-NO',
     getReady: 'Gjør deg klar',
     work: 'Jobb',
-    rest: 'Hvile',
+    rest: 'Pause',
     go: 'Kjør',
     lastRound: 'Siste runde',
     halfway: 'Halvveis',
@@ -89,6 +93,8 @@ const BASES: Record<Lang, Base> = {
     finish: 'Tid! Bra jobba',
     soundCheck: 'Lydtest',
     oneMinuteRemaining: 'Ett minutt igjen',
+    setRest: 'Settpause',
+    roundRest: 'Rundepause',
     round: (n) => `Runde ${n}`,
     roundOf: (n, t) => `Runde ${n} av ${t}`,
     amrapSet: (n) => `AMRAP ${n}. Kjør`,
@@ -99,7 +105,7 @@ const BASES: Record<Lang, Base> = {
   de: {
     speechLang: 'de-DE',
     getReady: 'Mach dich bereit',
-    work: 'Arbeit',
+    work: 'Belastung',
     rest: 'Pause',
     go: 'Los',
     lastRound: 'Letzte Runde',
@@ -108,6 +114,8 @@ const BASES: Record<Lang, Base> = {
     finish: 'Zeit! Super gemacht',
     soundCheck: 'Tontest',
     oneMinuteRemaining: 'Noch eine Minute',
+    setRest: 'Satzpause',
+    roundRest: 'Rundenpause',
     round: (n) => `Runde ${n}`,
     roundOf: (n, t) => `Runde ${n} von ${t}`,
     amrapSet: (n) => `AMRAP ${n}. Los`,
@@ -127,6 +135,8 @@ const BASES: Record<Lang, Base> = {
     finish: '¡Tiempo! Buen trabajo',
     soundCheck: 'Prueba de sonido',
     oneMinuteRemaining: 'Queda un minuto',
+    setRest: 'Descanso entre series',
+    roundRest: 'Descanso entre rondas',
     round: (n) => `Ronda ${n}`,
     roundOf: (n, t) => `Ronda ${n} de ${t}`,
     amrapSet: (n) => `AMRAP ${n}. Ya`,
@@ -146,6 +156,8 @@ const BASES: Record<Lang, Base> = {
     finish: 'Temps ! Beau travail',
     soundCheck: 'Test du son',
     oneMinuteRemaining: 'Plus qu’une minute',
+    setRest: 'Repos entre séries',
+    roundRest: 'Repos entre tours',
     round: (n) => `Tour ${n}`,
     roundOf: (n, t) => `Tour ${n} sur ${t}`,
     amrapSet: (n) => `AMRAP ${n}. Partez`,
@@ -154,6 +166,31 @@ const BASES: Record<Lang, Base> = {
     remaining: (d) => `Encore ${d}`,
   },
 };
+
+/**
+ * Segment type: `seg.type` from compile(), or — for hand-built / older
+ * segments without one — inferred from the English built-in labels.
+ */
+function typeOf(seg: Segment): SegmentType {
+  if (seg.type) return seg.type;
+  if (seg.kind === 'prep') return 'prep';
+  const label = (seg.label || '').trim();
+  const lower = label.toLowerCase();
+  if (seg.kind === 'rest') {
+    if (lower === 'rest' || !label) return 'rest';
+    if (lower === 'set rest') return 'setRest';
+    if (lower === 'round rest') return 'roundRest';
+    return 'step';
+  }
+  if (seg.round && (label === 'EMOM' || /^E(\d+MOM|\d+:\d\d)$/.test(label))) return 'emom';
+  if (lower === 'death by') return 'deathby';
+  if (lower === 'work') return 'work';
+  if (lower === 'amrap') return 'amrap';
+  if (lower === 'for time') return 'fortime';
+  if (lower === 'countdown') return 'countdown';
+  if (lower === 'stopwatch') return 'stopwatch';
+  return 'step';
+}
 
 const cache = new Map<Lang, SpokenPhrases>();
 
@@ -169,40 +206,43 @@ export function spokenPhrases(lang: Lang): SpokenPhrases {
     return m ? `${b.hours(h)} ${b.minutes(m)}` : b.hours(h);
   };
 
-  /** Built-in English labels from compile.ts are replaced; user labels are spoken as typed. */
-  const builtIn = (label: string, fallback: string): string => {
-    if (lang === 'en') return label || fallback;
-    const l = label.toLowerCase();
-    if (l === 'rest' || l === 'set rest' || l === 'round rest') return b.rest;
-    if (l === 'work') return b.work;
-    return label || fallback;
-  };
-
   const segment = (seg: Segment): string => {
     const label = (seg.label || '').trim();
     const detail = (seg.detail || '').trim();
-    const lower = label.toLowerCase();
-
-    if (seg.kind === 'prep') return b.getReady;
-    if (seg.kind === 'rest') return builtIn(label, b.rest);
-
-    if (seg.round && (label === 'EMOM' || /^E(\d+MOM|\d+:\d\d)$/.test(label))) {
-      return detail ? `${b.round(seg.round)}. ${detail}` : b.round(seg.round);
+    switch (typeOf(seg)) {
+      case 'prep':
+        return b.getReady;
+      case 'rest':
+      case 'amrapRest':
+        return b.rest;
+      case 'setRest':
+        return b.setRest;
+      case 'roundRest':
+        return b.roundRest;
+      case 'emom':
+        if (!seg.round) return detail || label || b.go;
+        return detail ? `${b.round(seg.round)}. ${detail}` : b.round(seg.round);
+      case 'deathby':
+        return detail || (seg.round ? b.round(seg.round) : b.go);
+      case 'work':
+      case 'open':
+        if (detail) return `${b.work}. ${detail}`;
+        if (seg.round && seg.totalRounds && seg.totalRounds > 1) {
+          if (seg.round === seg.totalRounds && (!seg.totalSets || seg.set === seg.totalSets)) return b.lastRound;
+          return b.roundOf(seg.round, seg.totalRounds);
+        }
+        return b.work;
+      case 'amrap':
+        return seg.totalSets && seg.totalSets > 1 && seg.set ? b.amrapSet(seg.set) : b.go;
+      case 'fortime':
+      case 'countdown':
+      case 'stopwatch':
+        return b.go;
+      case 'step':
+        // Custom steps: the user's own label, spoken as typed.
+        if (seg.kind === 'rest') return label || b.rest;
+        return detail ? `${label}. ${detail}` : label || b.go;
     }
-    if (lower === 'death by') return detail || (seg.round ? b.round(seg.round) : b.go);
-    if (lower === 'work') {
-      if (detail) return `${b.work}. ${detail}`;
-      if (seg.round && seg.totalRounds && seg.totalRounds > 1) {
-        if (seg.round === seg.totalRounds && (!seg.totalSets || seg.set === seg.totalSets)) return b.lastRound;
-        return b.roundOf(seg.round, seg.totalRounds);
-      }
-      return b.work;
-    }
-    if (lower === 'amrap') {
-      return seg.totalSets && seg.totalSets > 1 && seg.set ? b.amrapSet(seg.set) : b.go;
-    }
-    if (lower === 'for time' || lower === 'countdown' || lower === 'stopwatch') return b.go;
-    return detail ? `${label}. ${detail}` : label || b.go;
   };
 
   const minute = (minutesRemaining: number | null, minutesElapsed: number): string => {

@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useT } from '../../i18n';
 import { mmss } from '../../lib/format';
 import { Button } from './Button';
 import { Icon } from './Icon';
@@ -46,6 +47,7 @@ export function DurationField({
   zeroLabel,
   disabled,
 }: DurationFieldProps) {
+  const { t } = useT();
   const [open, setOpen] = useState(false);
   const set = (v: number) => onChange(clamp(Math.round(v), min, max));
   const shown = value === 0 && zeroLabel ? zeroLabel : mmss(value);
@@ -59,7 +61,7 @@ export function DurationField({
         onClick={() => setOpen(true)}
         disabled={disabled}
         aria-haspopup="dialog"
-        aria-label={`${label}: ${shown}. Change`}
+        aria-label={t('ui.durationChange', { label, value: shown })}
       >
         <span className="num">{shown}</span>
         <Icon name="chevronDown" size={16} />
@@ -70,7 +72,7 @@ export function DurationField({
         title={label}
         footer={
           <Button variant="primary" size="lg" block onClick={() => setOpen(false)} data-autofocus>
-            Done
+            {t('common.done')}
           </Button>
         }
       >
@@ -80,9 +82,9 @@ export function DurationField({
           </div>
           <div className="ui-dpick__cols">
             <div className="ui-dpick__col">
-              <span className="ui-dpick__cap">Minutes</span>
+              <span className="ui-dpick__cap">{t('ui.minutes')}</span>
               <Stepper
-                label="Minutes"
+                label={t('ui.minutes')}
                 value={value}
                 step={60}
                 min={min}
@@ -92,9 +94,9 @@ export function DurationField({
               />
             </div>
             <div className="ui-dpick__col">
-              <span className="ui-dpick__cap">Seconds</span>
+              <span className="ui-dpick__cap">{t('ui.seconds')}</span>
               <Stepper
-                label="Seconds"
+                label={t('ui.seconds')}
                 value={value}
                 step={secStep}
                 min={min}
@@ -106,7 +108,7 @@ export function DurationField({
           </div>
           {visibleChips.length > 0 && (
             <>
-              <span className="ui-dpick__cap">Quick pick</span>
+              <span className="ui-dpick__cap">{t('ui.quickPick')}</span>
               <div className="ui-chips">
                 {visibleChips.map((c) => (
                   <button

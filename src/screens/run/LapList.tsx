@@ -1,3 +1,4 @@
+import { useT } from '../../i18n';
 import { formatClockString } from '../../lib/format';
 
 export interface SplitRow {
@@ -10,16 +11,20 @@ export interface SplitRow {
 export function SplitList({
   rows,
   label,
+  kind = 'round',
   newestFirst = false,
   limit,
   tenths = true,
 }: {
   rows: SplitRow[];
   label: string;
+  /** Row naming: "Lap 3" or "Rd 3". */
+  kind?: 'lap' | 'round';
   newestFirst?: boolean;
   limit?: number;
   tenths?: boolean;
 }) {
+  const { t } = useT();
   if (rows.length === 0) return null;
   let fastest = -1;
   let slowest = -1;
@@ -49,9 +54,9 @@ export function SplitList({
         return (
           <li key={r.index} className={`splits__row${tag ? ` is-${tag}` : ''}`}>
             <span className="splits__idx num">
-              {label.startsWith('Lap') ? 'Lap' : 'Rd'} {r.index}
+              {t(kind === 'lap' ? 'split.lap' : 'split.rd', { n: r.index })}
             </span>
-            {tag ? <span className="splits__tag">{tag === 'fast' ? 'Fastest' : 'Slowest'}</span> : <span />}
+            {tag ? <span className="splits__tag">{tag === 'fast' ? t('split.fastest') : t('split.slowest')}</span> : <span />}
             <span className="splits__split num">{formatClockString(r.splitMs, { tenths })}</span>
             <span className="splits__at num">{formatClockString(r.atMs)}</span>
           </li>

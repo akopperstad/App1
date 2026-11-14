@@ -1,5 +1,6 @@
 import { useEffect } from 'react';
 import type { TimerEngine } from '../engine/engine';
+import { getT } from '../i18n';
 import { settingsStore } from '../state/store';
 import { onAppActiveChange } from './app';
 import {
@@ -30,7 +31,7 @@ export function useBackgroundCues(engine: TimerEngine): void {
       if (!settingsStore.get().backgroundAlerts || engine.getStatus() !== 'running') return;
       const s = engine.tick(); // bring the timeline up to "now" first
       if (s.status !== 'running') return;
-      void armBackgroundCues(planAlerts(engine.getSegments(), s.segmentIndex, s.segmentElapsedMs));
+      void armBackgroundCues(planAlerts(engine.getSegments(), s.segmentIndex, s.segmentElapsedMs, undefined, getT()));
     };
 
     const offActive = onAppActiveChange((active) => {

@@ -1,3 +1,5 @@
+import { EN, type Translator } from '../i18n/core';
+
 /**
  * Time formatting. Count-down displays round UP (so "0:03" is shown for the
  * whole third-to-last second and 0:00 only appears at the very end);
@@ -41,16 +43,27 @@ export function formatClockString(ms: number, opts: { roundUp?: boolean; tenths?
   return p.tenths !== undefined ? `${p.main}.${p.tenths}` : p.main;
 }
 
-/** Compact human duration: "20s", "1m 30s", "12 min", "1h 5m". */
-export function formatDuration(sec: number): string {
+/** Compact human duration: "20s", "1m 30s", "12 min", "1h 5m" (units follow `tr`'s language). */
+export function formatDuration(sec: number, { t }: Translator = EN): string {
   sec = Math.round(sec); // round first: 59.6 must give "1 min", not "60s"
-  if (sec <= 0) return '0s';
+  if (sec <= 0) return t('unit.s', { n: 0 });
   const h = Math.floor(sec / 3600);
   const m = Math.floor((sec % 3600) / 60);
   const s = sec % 60;
-  if (h > 0) return m ? `${h}h ${m}m` : `${h}h`;
-  if (m > 0) return s ? `${m}m ${s}s` : `${m} min`;
-  return `${s}s`;
+  if (h > 0) return m ? t('unit.hMin', { h, m }) : t('unit.h', { n: h });
+  if (m > 0) return s ? t('unit.minSec', { m, s }) : t('unit.min', { n: m });
+  return t('unit.s', { n: s });
+}
+
+/** Stat-tile duration: "43m", "1h 12m", "45s" (localized). */
+export function formatCompact(ms: number, { t }: Translator = EN): string {
+  const sec = Math.round(ms / 1000);
+  if (sec <= 0) return t('unit.compactMin', { n: 0 });
+  const h = Math.floor(sec / 3600);
+  const m = Math.floor((sec % 3600) / 60);
+  if (h > 0) return m ? t('unit.compactHMin', { h, m }) : t('unit.h', { n: h });
+  if (m > 0) return t('unit.compactMin', { n: m });
+  return t('unit.s', { n: sec });
 }
 
 /** "mm:ss" from seconds — for compact config summaries. */

@@ -2,12 +2,15 @@ import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties, 
 import { cuePlayer } from '../audio/cues';
 import { compile } from '../engine/compile';
 import { TimerEngine } from '../engine/engine';
-import { describe, modeInfo, totalSeconds } from '../engine/modes';
+import { describe, modeInfo, modeTagline, modeTitle, totalSeconds } from '../engine/modes';
 import { normalizeConfig } from '../engine/normalize';
 import type { Cue, SegmentKind, Snapshot, WorkoutConfig } from '../engine/types';
+import { getT, useT } from '../i18n';
 import { formatClock, formatDuration } from '../lib/format';
+import { resetThemeColor, setThemeColor } from '../lib/themeColor';
 import { useWakeLock } from '../lib/wakeLock';
 import { useBackgroundCues } from '../native/useBackgroundCues';
+import { useStatusBarOverride } from '../native/systemUi';
 import { useNav } from '../nav';
 import { saveHistory, settingsStore, useSettings } from '../state/store';
 import {
@@ -15,6 +18,7 @@ import {
   clockModel,
   displayKey,
   firstWork,
+  isUpNextRest,
   phaseLabel,
   phaseOf,
   ringValue,
@@ -54,6 +58,9 @@ export function Run({ config: rawConfig }: { config: WorkoutConfig }) {
   // Configs can come from storage (history / presets); never let a malformed one crash the run.
   const [config] = useState<WorkoutConfig>(() => normalizeConfig(rawConfig) ?? { mode: 'stopwatch' });
   const info = modeInfo(config.mode);
+  const tr = useT();
+  const { t, tp } = tr;
+  const modeName = modeTitle(config.mode, tr);
 
   // ------------------------------------------------------------ engine
   const cueRef = useRef<(cue: Cue) => void>(() => {});
@@ -61,7 +68,8 @@ export function Run({ config: rawConfig }: { config: WorkoutConfig }) {
   const mounted = useRef(false);
   const [engine] = useState(
     () =>
-      new TimerEngine(compile(config, settingsStore.get().prepSec), {
+      // The workout's language is fixed when it starts: labels are compiled once.
+      new TimerEngine(compile(config, settingsStore.get().prepSec, getT()), {
         onCue: (c) => {
           if (mounted.current) cueRef.current(c);
         },
@@ -92,19 +100,19 @@ export function Run({ config: rawConfig }: { config: WorkoutConfig }) {
     switch (cue.type) {
       case 'segment':
         if (st.flashOnChange) setFlash((f) => ({ n: (f?.n ?? 0) + 1, kind: cue.segment.kind }));
-        setAnnounce(announceFor(cue.segment, config));
+        setAnnounce(announceFor(cue.segment, config, getT()));
         break;
       case 'start':
-        setAnnounce(announceFor(cue.segment, config));
+        setAnnounce(announceFor(cue.segment, config, getT()));
         break;
       case 'finish':
-        setAnnounce('Workout complete');
+        setAnnounce(getT().t('run.complete'));
         break;
       case 'pause':
-        setAnnounce('Paused');
+        setAnnounce(getT().t('run.paused'));
         break;
       case 'resume':
-        setAnnounce('Resumed');
+        setAnnounce(getT().t('run.resumed'));
         break;
     }
   };
@@ -395,15 +403,14 @@ export function Run({ config: rawConfig }: { config: WorkoutConfig }) {
   const clock = clockModel(snap, config, settings, idleSeg);
   const ring = useCallback((s: Snapshot) => ringValue(s, config, settingsStore.get(), idleSeg), [config, idleSeg]);
 
-  const label = status === 'idle' ? info.title : phaseLabel(seg);
-  const detail = status === 'idle' ? info.tagline : seg.detail && !/^Next:/.test(seg.detail) ? seg.detail : undefined;
+  const label = status === 'idle' ? modeName : phaseLabel(seg, tr);
+  const detail = status === 'idle' ? modeTagline(config.mode, tr) : seg.detail && !isUpNextRest(seg) ? seg.detail : undefined;
   const subInfo =
     status === 'idle'
       ? ''
       : seg.kind === 'prep'
-        ? `${info.title} · ${describe(config)}`
-        : roundInfo(seg, config) ||
-          (seg.detail && /^Next:/.test(seg.detail) ? seg.detail.replace(/^Next:\s*/, 'Up next: ') : '');
+        ? describe(config, tr) // the mode name is already in the top bar
+        : roundInfo(seg, config, tr) || (seg.detail && isUpNextRest(seg) ? seg.detail : '');
 
   const planned = snap.plannedWorkMs;
   const stats: { label: string; value: string; wide?: boolean }[] = [];
@@ -411,32 +418,62 @@ export function Run({ config: rawConfig }: { config: WorkoutConfig }) {
     // Single-segment modes: only show the figure the big clock isn't already showing.
     const showElapsed = seg.kind !== 'prep' && (multiSeg || clock.down);
     const showRemaining = planned !== null && mode !== 'deathby' && (multiSeg || seg.kind === 'prep' || !clock.down);
-    if (showElapsed) stats.push({ label: 'Elapsed', value: formatClock(snap.workElapsedMs).main });
+    if (showElapsed) stats.push({ label: t('run.elapsed'), value: formatClock(snap.workElapsedMs).main });
     if (showRemaining) {
       stats.push({
-        label: seg.kind === 'prep' ? 'Total' : mode === 'fortime' ? 'To cap' : 'Remaining',
+        label: seg.kind === 'prep' ? t('run.total') : mode === 'fortime' ? t('run.toCap') : t('run.remaining'),
         // Plan position, not wall clock: stays right after ← / → / +time.
         value: formatClock(snap.remainingWorkMs ?? planned, { roundUp: true }).main,
       });
     }
     if (snap.next && multiSeg) {
-      stats.push({ label: 'Next up', value: `${segmentShort(snap.next)} · ${segmentTime(snap.next)}`, wide: true });
+      stats.push({ label: t('run.nextUp'), value: `${segmentShort(snap.next, tr)} · ${segmentTime(snap.next, tr)}`, wide: true });
     } else if (multiSeg && !snap.next) {
-      stats.push({ label: 'Next up', value: 'Finish', wide: true });
+      stats.push({ label: t('run.nextUp'), value: t('run.finish'), wide: true });
     }
   }
 
   const total = totalSeconds(config);
   const overview: string[] = [];
-  const summary = describe(config);
-  if (total === null || summary !== formatDuration(total)) overview.push(summary);
-  if (total !== null) overview.push(`Total ${formatDuration(total)}`);
-  else overview.push('Open-ended');
-  if (workSegCount > 1) overview.push(`${workSegCount} segments`);
-  if (segments[0].kind === 'prep') overview.push(`${formatDuration((segments[0].durationMs ?? 0) / 1000)} get ready`);
+  const summary = describe(config, tr);
+  if (total === null || summary !== formatDuration(total, tr)) overview.push(summary);
+  if (total !== null) overview.push(t('run.totalD', { d: formatDuration(total, tr) }));
+  else overview.push(t('run.openEnded'));
+  if (workSegCount > 1) overview.push(tp('run.segments', workSegCount));
+  if (segments[0].kind === 'prep') overview.push(t('run.prepD', { d: formatDuration((segments[0].durationMs ?? 0) / 1000, tr) }));
 
   const style = { '--accent': info.accent, '--em': clock.em } as CSSProperties;
   const finished = status === 'finished';
+
+  // Light theme: while a phase colour fills the screen (see Run.css "bold surface"),
+  // the browser bar (theme-color) and native status-bar icons follow it.
+  const tinted = active && document.documentElement.dataset.theme === 'light';
+  useStatusBarOverride(tinted ? (status === 'running' && phase === 'prep' ? 'dark' : 'light') : null);
+  const rootRef = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    const el = rootRef.current;
+    if (!tinted || !el) {
+      resetThemeColor();
+      return;
+    }
+    const read = () => {
+      const cs = getComputedStyle(el);
+      const bg = cs.backgroundColor;
+      // Paused is a color-mix() (may serialise as color(srgb …)); fall back to the phase token.
+      setThemeColor(/^(rgb|#)/.test(bg) ? bg : cs.getPropertyValue('--ph').trim() || bg);
+    };
+    read();
+    // --ph animates between phases (600ms): settle on the final colour.
+    const raf = requestAnimationFrame(read);
+    const late = window.setTimeout(read, 650);
+    el.addEventListener('transitionend', read);
+    return () => {
+      cancelAnimationFrame(raf);
+      window.clearTimeout(late);
+      el.removeEventListener('transitionend', read);
+    };
+  }, [tinted, phase, status]);
+  useEffect(() => () => resetThemeColor(), []);
 
   // ------------------------------------------------------------ pieces
   const playBtn = (
@@ -444,7 +481,7 @@ export function Run({ config: rawConfig }: { config: WorkoutConfig }) {
       type="button"
       className={`transport__play${status === 'paused' ? ' is-paused' : ''}`}
       onClick={toggle}
-      aria-label={status === 'running' ? 'Pause' : 'Resume'}
+      aria-label={status === 'running' ? t('run.pause') : t('run.resume')}
     >
       {status === 'running' ? <IconPause size={44} /> : <IconPlay size={44} />}
     </button>
@@ -453,28 +490,28 @@ export function Run({ config: rawConfig }: { config: WorkoutConfig }) {
   const resetBtn = (cls: string, withLabel: boolean) => (
     <HoldButton
       className={cls}
-      label="Reset"
+      label={t('run.reset')}
       requireHold={active}
       disabled={status === 'idle'}
       onConfirm={doReset}
       onRequestConfirm={() => setSheet('reset')}
     >
       <IconReset size={withLabel ? 20 : 26} />
-      {withLabel && <span>Hold to reset</span>}
+      {withLabel && <span>{t('run.holdReset')}</span>}
     </HoldButton>
   );
 
   const endBtn = (
     <HoldButton
       className="pill"
-      label="End workout"
+      label={t('run.endWorkout')}
       requireHold={active}
       disabled={!active}
       onConfirm={() => finishWith('end')}
       onRequestConfirm={() => setSheet('end')}
     >
       <IconStop size={18} />
-      <span>Hold to end</span>
+      <span>{t('run.holdEnd')}</span>
     </HoldButton>
   );
 
@@ -484,14 +521,14 @@ export function Run({ config: rawConfig }: { config: WorkoutConfig }) {
       className="transport__side transport__done"
       onClick={() => finishWith('done')}
       disabled={!active || inPrep}
-      aria-label="Done — finish workout"
+      aria-label={t('run.doneAria')}
     >
       <IconCheck size={30} />
     </button>
   );
 
   const lapTile = (
-    <button type="button" className="tile tile--icon" onClick={() => engine.lap()} disabled={inPrep} aria-label="Lap">
+    <button type="button" className="tile tile--icon" onClick={() => engine.lap()} disabled={inPrep} aria-label={t('run.lap')}>
       <IconFlag size={24} />
       {snap.laps.length > 0 && <span className="tile__badge num">{snap.laps.length}</span>}
     </button>
@@ -502,7 +539,7 @@ export function Run({ config: rawConfig }: { config: WorkoutConfig }) {
     if (untimedStep) {
       actions = (
         <button type="button" className="tile tile--next" onClick={() => engine.next()}>
-          <span>{isLastSeg ? 'Finish' : 'Step done'}</span>
+          <span>{isLastSeg ? t('run.finish') : t('run.stepDone')}</span>
           <IconNext size={26} />
         </button>
       );
@@ -524,13 +561,13 @@ export function Run({ config: rawConfig }: { config: WorkoutConfig }) {
       actions = (
         <button type="button" className="tile tile--lap" onClick={() => engine.lap()} disabled={inPrep}>
           <IconFlag size={26} />
-          <span>Lap</span>
+          <span>{t('run.lap')}</span>
           {snap.laps.length > 0 && <span className="tile__badge num">{snap.laps.length}</span>}
         </button>
       );
     } else if (canAdjust) {
       actions = (
-        <div className="adjust" role="group" aria-label="Adjust time">
+        <div className="adjust" role="group" aria-label={t('run.adjust')}>
           <button type="button" className="tile tile--adj num" onClick={() => engine.adjustCurrent(-10_000)}>
             −0:10
           </button>
@@ -549,12 +586,12 @@ export function Run({ config: rawConfig }: { config: WorkoutConfig }) {
   let right: ReactNode;
   if (multiSeg) {
     left = (
-      <button type="button" className="transport__side" onClick={() => engine.previous()} aria-label="Previous segment">
+      <button type="button" className="transport__side" onClick={() => engine.previous()} aria-label={t('run.prev')}>
         <IconPrev size={28} />
       </button>
     );
     right = (
-      <button type="button" className="transport__side" onClick={() => engine.next()} aria-label="Next segment">
+      <button type="button" className="transport__side" onClick={() => engine.next()} aria-label={t('run.next')}>
         <IconNext size={28} />
       </button>
     );
@@ -562,7 +599,7 @@ export function Run({ config: rawConfig }: { config: WorkoutConfig }) {
     left = resetBtn('transport__side hold', false);
     if (inPrep) {
       right = (
-        <button type="button" className="transport__side" onClick={() => engine.next()} aria-label="Skip get ready">
+        <button type="button" className="transport__side" onClick={() => engine.next()} aria-label={t('run.skipPrep')}>
           <IconNext size={28} />
         </button>
       );
@@ -572,7 +609,7 @@ export function Run({ config: rawConfig }: { config: WorkoutConfig }) {
       right = (
         <HoldButton
           className="transport__side hold"
-          label="End"
+          label={t('run.end')}
           requireHold
           onConfirm={() => finishWith('end')}
           onRequestConfirm={() => setSheet('end')}
@@ -586,7 +623,7 @@ export function Run({ config: rawConfig }: { config: WorkoutConfig }) {
   }
 
   return (
-    <div className="run" data-phase={phase} data-status={status} data-focus={focus && active ? '' : undefined} style={style}>
+    <div ref={rootRef} className="run" data-phase={phase} data-status={status} data-tinted={tinted ? '' : undefined} data-focus={focus && active ? '' : undefined} style={style}>
       <div className="run__bg" aria-hidden="true" />
       {clock.final > 0 && <div key={clock.final} className="run__beat" aria-hidden="true" />}
       {flash && settings.flashOnChange && (
@@ -594,19 +631,19 @@ export function Run({ config: rawConfig }: { config: WorkoutConfig }) {
       )}
 
       <header className="run__top">
-        <button type="button" className="icon-btn" onClick={requestBack} aria-label="Back">
+        <button type="button" className="icon-btn" onClick={requestBack} aria-label={t('common.back')}>
           <IconBack size={26} />
         </button>
         <div className="run__title">
-          <span className="run__name">{config.name?.trim() || info.title}</span>
-          {status !== 'idle' && !finished && <span className="run__mode">{describe(config)}</span>}
+          <span className="run__name">{config.name?.trim() || modeName}</span>
+          {status !== 'idle' && !finished && <span className="run__mode">{describe(config, tr)}</span>}
         </div>
         {fsSupported ? (
           <button
             type="button"
             className="icon-btn"
             onClick={toggleFs}
-            aria-label={isFs ? 'Exit fullscreen' : 'Fullscreen'}
+            aria-label={isFs ? t('run.exitFs') : t('run.fs')}
             aria-pressed={isFs}
           >
             {isFs ? <IconShrink size={22} /> : <IconExpand size={22} />}
@@ -616,7 +653,7 @@ export function Run({ config: rawConfig }: { config: WorkoutConfig }) {
             type="button"
             className="icon-btn"
             onClick={toggleFocus}
-            aria-label="Big clock"
+            aria-label={t('run.bigClock')}
             aria-pressed={focus}
           >
             {focus ? <IconShrink size={22} /> : <IconExpand size={22} />}
@@ -654,11 +691,11 @@ export function Run({ config: rawConfig }: { config: WorkoutConfig }) {
                 <ProgressRing bus={bus} value={ring} />
               </div>
               <div className="stage__center">
-                {status === 'paused' && <span className="chip chip--paused">Paused</span>}
+                {status === 'paused' && <span className="chip chip--paused">{t('run.paused')}</span>}
                 <div
                   className={`clock num${clock.final ? ' is-final' : ''}`}
                   role="timer"
-                  aria-label={`${clock.down ? 'Remaining' : 'Elapsed'} ${clock.main}`}
+                  aria-label={t(clock.down ? 'run.clockRemaining' : 'run.clockElapsed', { time: clock.main })}
                 >
                   <span key={clock.final || 'x'} className="clock__digits">
                     {clock.main}
@@ -673,7 +710,7 @@ export function Run({ config: rawConfig }: { config: WorkoutConfig }) {
 
           <aside className="run__side">
             {status === 'idle' ? (
-              <ul className="overview" aria-label="Workout overview">
+              <ul className="overview" aria-label={t('run.overview')}>
                 {overview.map((o) => (
                   <li key={o} className="overview__chip">
                     {o}
@@ -696,7 +733,8 @@ export function Run({ config: rawConfig }: { config: WorkoutConfig }) {
                   {snap.laps.length > 0 && (
                     <SplitList
                       rows={snap.laps.map((l) => ({ index: l.index, atMs: l.atMs, splitMs: l.splitMs }))}
-                      label="Laps"
+                      label={t('run.laps')}
+                      kind="lap"
                       newestFirst
                       limit={mode === 'stopwatch' ? 4 : 2}
                       tenths={settings.showTenths}
@@ -709,7 +747,7 @@ export function Run({ config: rawConfig }: { config: WorkoutConfig }) {
             {status === 'idle' ? (
               <button type="button" className="start" onClick={begin}>
                 <IconPlay size={34} />
-                <span>Start</span>
+                <span>{t('common.start')}</span>
               </button>
             ) : (
               <>
@@ -730,7 +768,7 @@ export function Run({ config: rawConfig }: { config: WorkoutConfig }) {
                         disabled={!active || inPrep}
                       >
                         <IconCheck size={18} />
-                        <span>Done</span>
+                        <span>{t('run.done')}</span>
                       </button>
                     ) : (
                       endBtn
@@ -741,33 +779,33 @@ export function Run({ config: rawConfig }: { config: WorkoutConfig }) {
             )}
 
             <p className="kbd-hint" aria-hidden="true">
-              <kbd>Space</kbd> {status === 'idle' ? 'start' : 'pause'}
+              <kbd>{t('kbd.space')}</kbd> {status === 'idle' ? t('kbd.start') : t('kbd.pause')}
               {multiSeg && (
                 <>
                   {' '}
                   · <kbd>←</kbd>
-                  <kbd>→</kbd> segment
+                  <kbd>→</kbd> {t('kbd.segment')}
                 </>
               )}
               {hasLaps && (
                 <>
                   {' '}
-                  · <kbd>L</kbd> lap
+                  · <kbd>L</kbd> {t('kbd.lap')}
                 </>
               )}
               {hasRounds && (
                 <>
                   {' '}
-                  · <kbd>R</kbd> round
+                  · <kbd>R</kbd> {t('kbd.round')}
                 </>
               )}
               {fsSupported && (
                 <>
                   {' '}
-                  · <kbd>F</kbd> fullscreen
+                  · <kbd>F</kbd> {t('kbd.fs')}
                 </>
               )}{' '}
-              · <kbd>Esc</kbd> back
+              · <kbd>Esc</kbd> {t('kbd.back')}
             </p>
           </aside>
         </div>
@@ -777,45 +815,39 @@ export function Run({ config: rawConfig }: { config: WorkoutConfig }) {
         {announce}
       </div>
 
-      {sheet === 'leave' && (
-        <Sheet title="Leave workout?" onClose={() => setSheet(null)}>
-          <p className="sheet__text">The timer will stop. What you’ve done so far is saved to history.</p>
-          <div className="sheet__actions">
-            <button type="button" className="btn" data-autofocus onClick={() => setSheet(null)}>
-              Keep going
-            </button>
-            <button type="button" className="btn btn--danger" onClick={leave}>
-              Leave
-            </button>
-          </div>
-        </Sheet>
-      )}
-      {sheet === 'reset' && (
-        <Sheet title="Reset workout?" onClose={() => setSheet(null)}>
-          <p className="sheet__text">The timer goes back to the start. Progress so far is saved to history.</p>
-          <div className="sheet__actions">
-            <button type="button" className="btn" data-autofocus onClick={() => setSheet(null)}>
-              Cancel
-            </button>
-            <button type="button" className="btn btn--danger" onClick={doReset}>
-              Reset
-            </button>
-          </div>
-        </Sheet>
-      )}
-      {sheet === 'end' && (
-        <Sheet title="End workout now?" onClose={() => setSheet(null)}>
-          <p className="sheet__text">You’ll see your summary and the session is saved as ended early.</p>
-          <div className="sheet__actions">
-            <button type="button" className="btn" data-autofocus onClick={() => setSheet(null)}>
-              Cancel
-            </button>
-            <button type="button" className="btn btn--danger" onClick={() => finishWith('end')}>
-              End
-            </button>
-          </div>
-        </Sheet>
-      )}
+      <Sheet open={sheet === 'leave'} title={t('run.leaveTitle')} onClose={() => setSheet(null)}>
+        <p className="sheet__text">{t('run.leaveBody')}</p>
+        <div className="sheet__actions">
+          <button type="button" className="btn" data-autofocus onClick={() => setSheet(null)}>
+            {t('run.keepGoing')}
+          </button>
+          <button type="button" className="btn btn--danger" onClick={leave}>
+            {t('run.leave')}
+          </button>
+        </div>
+      </Sheet>
+      <Sheet open={sheet === 'reset'} title={t('run.resetTitle')} onClose={() => setSheet(null)}>
+        <p className="sheet__text">{t('run.resetBody')}</p>
+        <div className="sheet__actions">
+          <button type="button" className="btn" data-autofocus onClick={() => setSheet(null)}>
+            {t('common.cancel')}
+          </button>
+          <button type="button" className="btn btn--danger" onClick={doReset}>
+            {t('run.reset')}
+          </button>
+        </div>
+      </Sheet>
+      <Sheet open={sheet === 'end'} title={t('run.endTitle')} onClose={() => setSheet(null)}>
+        <p className="sheet__text">{t('run.endBody')}</p>
+        <div className="sheet__actions">
+          <button type="button" className="btn" data-autofocus onClick={() => setSheet(null)}>
+            {t('common.cancel')}
+          </button>
+          <button type="button" className="btn btn--danger" onClick={() => finishWith('end')}>
+            {t('run.end')}
+          </button>
+        </div>
+      </Sheet>
     </div>
   );
 }

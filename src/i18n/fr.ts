@@ -183,11 +183,11 @@ export const fr: Dict = {
   'modeTag.emom': 'Chaque minute, top départ',
   'modeTag.fortime': 'Contre la montre, cap en option',
   'modeTag.tabata': '20 s effort · 10 s repos · 8 tours',
-  'modeTag.interval': 'Effort/repos, tours et séries sur mesure',
-  'modeTag.deathby': 'Une rép. de plus chaque minute jusqu’à l’échec',
+  'modeTag.interval': 'Effort/repos, tours et séries',
+  'modeTag.deathby': '+1 rép. par minute jusqu’à l’échec',
   'modeTag.custom': 'Créez n’importe quelle séquence',
-  'modeTag.countdown': 'Minuteur simple — repos, gainage, isométrie',
-  'modeTag.stopwatch': 'Compte à l’endroit, tours et temps intermédiaires',
+  'modeTag.countdown': 'Repos, gainage, isométrie',
+  'modeTag.stopwatch': 'Chrono avec tours et temps partiels',
 
   // ---- benchmark names (descriptive ones; Cindy, Fran … stay proper names)
   'bench.classicTabata': 'Tabata classique',
@@ -391,9 +391,9 @@ export const fr: Dict = {
   'run.pause': 'Pause',
   'run.resume': 'Reprendre',
   'run.reset': 'Réinitialiser',
-  'run.holdReset': 'Maintenir pour réinitialiser',
+  'run.holdReset': 'Maintenir : RAZ',
   'run.endWorkout': 'Terminer la séance',
-  'run.holdEnd': 'Maintenir pour terminer',
+  'run.holdEnd': 'Maintenir : fin',
   'run.doneAria': 'Terminé — finir la séance',
   'run.done': 'Terminé',
   'run.lap': 'Tour',
@@ -472,4 +472,15 @@ export const fr: Dict = {
   'settings.mix.hintWeb': 'Les bips se mêlent à Spotify et aux autres apps — dans l’app Pulse pour iPhone et Android',
   'settings.bgAlerts': 'Alertes écran verrouillé',
   'settings.bgAlerts.hint': 'Une notification à chaque changement de phase, téléphone verrouillé',
+
+  // ---- background alerts (native notifications)
+  'alert.round': '{label} — Tour {n}/{total}',
+  'alert.timed': '{label} — {time}',
+  'alert.set': 'Série {n}/{total}',
+  'alert.tapNext': 'Touchez Suivant dans Pulse une fois fini',
+  'alert.upNext': 'Ensuite : {what}',
+  'alert.time': 'Temps !',
+  'alert.complete': 'Séance terminée',
+  'alert.channel': 'Signaux d’entraînement',
+  'alert.channelDesc': 'Son et vibration à chaque passage effort / repos, téléphone verrouillé ou Pulse en arrière-plan.',
 };

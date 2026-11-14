@@ -508,7 +508,10 @@
   font-size: var(--fs-sm);
   font-weight: 700;
   white-space: nowrap;
-  box-shadow: var(--shadow);
+  max-width: calc(100vw - 2 * var(--s-4));
+  overflow: hidden;
+  text-overflow: ellipsis;
+  box-shadow: var(--shadow-2);
   animation: cfg-toast 260ms var(--ease);
 }
 @keyframes cfg-toast {

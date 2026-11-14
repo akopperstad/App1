@@ -40,7 +40,7 @@ export const nb: Dict = {
   'settings.sound': 'Lyd',
   'settings.volume': 'Volum',
   'settings.voice': 'Taleopplesning',
-  'settings.voice.hint': '«Jobb», «Hvile», «Halvveis», «10 sekunder»',
+  'settings.voice.hint': '«Jobb», «Pause», «Halvveis», «10 sekunder»',
   'settings.beeps': '3-2-1-pip',
   'settings.beeps.hint': 'Før hvert intervallbytte',
   'settings.milestones': 'Milepæler',
@@ -184,10 +184,10 @@ export const nb: Dict = {
   'modeTag.fortime': 'Kjør mot klokka, med valgfri cap',
   'modeTag.tabata': '20 s jobb · 10 s pause · 8 runder',
   'modeTag.interval': 'Egen jobb/pause, runder og sett',
-  'modeTag.deathby': 'Én rep til hvert minutt til du ikke klarer mer',
+  'modeTag.deathby': '+1 rep hvert minutt til du sprekker',
   'modeTag.custom': 'Bygg din egen rekkefølge',
-  'modeTag.countdown': 'Enkel nedtelling — pause, planke, hold',
-  'modeTag.stopwatch': 'Teller opp, med runder og mellomtider',
+  'modeTag.countdown': 'Pauser, planke og statiske hold',
+  'modeTag.stopwatch': 'Teller opp med mellomtider',
 
   // ---- benchmark names (descriptive ones; Cindy, Fran … stay proper names)
   'bench.classicTabata': 'Klassisk Tabata',
@@ -369,8 +369,8 @@ export const nb: Dict = {
   'ui.minutes': 'Minutter',
   'ui.seconds': 'Sekunder',
   'ui.quickPick': 'Hurtigvalg',
-  'ui.decrease': 'Mindre {label}',
-  'ui.increase': 'Mer {label}',
+  'ui.decrease': 'Reduser {label}',
+  'ui.increase': 'Øk {label}',
   'ui.holdConfirm': '{label} (hold inne for å bekrefte)',
 
   // ---- run
@@ -391,9 +391,9 @@ export const nb: Dict = {
   'run.pause': 'Pause',
   'run.resume': 'Fortsett',
   'run.reset': 'Nullstill',
-  'run.holdReset': 'Hold for å nullstille',
+  'run.holdReset': 'Hold: nullstill',
   'run.endWorkout': 'Avslutt økta',
-  'run.holdEnd': 'Hold for å avslutte',
+  'run.holdEnd': 'Hold: avslutt',
   'run.doneAria': 'Ferdig — avslutt økta',
   'run.done': 'Ferdig',
   'run.lap': 'Runde',
@@ -472,4 +472,15 @@ export const nb: Dict = {
   'settings.mix.hintWeb': 'Pipene blandes med Spotify og andre apper — gjelder i Pulse-appen for iPhone og Android',
   'settings.bgAlerts': 'Varsler når skjermen er låst',
   'settings.bgAlerts.hint': 'Et varsel ved hvert faseskifte mens telefonen er låst',
+
+  // ---- background alerts (native notifications)
+  'alert.round': '{label} — Runde {n}/{total}',
+  'alert.timed': '{label} — {time}',
+  'alert.set': 'Sett {n}/{total}',
+  'alert.tapNext': 'Trykk Neste i Pulse når du er ferdig',
+  'alert.upNext': 'Neste: {what}',
+  'alert.time': 'Tid!',
+  'alert.complete': 'Økta er ferdig',
+  'alert.channel': 'Treningssignaler',
+  'alert.channelDesc': 'Lyd og vibrasjon ved hvert bytte mellom jobb og pause mens telefonen er låst eller Pulse er i bakgrunnen.',
 };

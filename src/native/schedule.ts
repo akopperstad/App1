@@ -1,4 +1,5 @@
 import type { Segment } from '../engine/types';
+import { EN, type Translator } from '../i18n/core';
 import { mmss } from '../lib/format';
 
 /**
@@ -25,25 +26,26 @@ export interface PlannedAlert {
 }
 
 /** "Work — Round 4/8", "Rest — 0:10", "Burpees" (open-ended custom step). */
-export function alertTitle(seg: Segment): string {
-  const label = (seg.label || (seg.kind === 'rest' ? 'Rest' : 'Work')).trim();
+export function alertTitle(seg: Segment, { t }: Translator = EN): string {
+  const label = (seg.label || (seg.kind === 'rest' ? t('seg.rest') : t('seg.work'))).trim();
   if (seg.kind !== 'rest' && seg.round && seg.totalRounds && seg.totalRounds > 1) {
-    return `${label} — Round ${seg.round}/${seg.totalRounds}`;
+    return t('alert.round', { label, n: seg.round, total: seg.totalRounds });
   }
-  if (seg.durationMs !== null && seg.durationMs > 0) return `${label} — ${mmss(seg.durationMs / 1000)}`;
+  if (seg.durationMs !== null && seg.durationMs > 0) return t('alert.timed', { label, time: mmss(seg.durationMs / 1000) });
   return label;
 }
 
-function alertBody(seg: Segment, next: Segment | undefined): string {
+function alertBody(seg: Segment, next: Segment | undefined, tr: Translator): string {
+  const { t } = tr;
   const parts: string[] = [];
   const detail = (seg.detail || '').trim();
   if (detail) parts.push(detail);
   if (seg.kind !== 'rest' && seg.round && seg.totalRounds && seg.totalRounds > 1 && seg.durationMs) {
     parts.push(mmss(seg.durationMs / 1000));
   }
-  if (seg.set && seg.totalSets && seg.totalSets > 1) parts.push(`Set ${seg.set}/${seg.totalSets}`);
-  if (seg.durationMs === null) parts.push('Tap Next in Pulse when done');
-  else if (seg.kind === 'rest' && next) parts.push(`Up next: ${alertTitle(next)}`);
+  if (seg.set && seg.totalSets && seg.totalSets > 1) parts.push(t('alert.set', { n: seg.set, total: seg.totalSets }));
+  if (seg.durationMs === null) parts.push(t('alert.tapNext'));
+  else if (seg.kind === 'rest' && next) parts.push(t('alert.upNext', { what: alertTitle(next, tr) }));
   return parts.join(' · ');
 }
 
@@ -56,13 +58,15 @@ function alertBody(seg: Segment, next: Segment | undefined): string {
  *
  * Stops at the first open-ended segment: its start is still announced, but
  * nothing after it is knowable. Ends with "Time!" when the plan runs out.
- * Capped to `max` (iOS pending-notification limit).
+ * Capped to `max` (iOS pending-notification limit). Texts use `tr` (default
+ * English); segment labels are already in the workout's language.
  */
 export function planAlerts(
   segments: readonly Segment[],
   index: number,
   segmentElapsedMs: number,
   max: number = MAX_PENDING_ALERTS,
+  tr: Translator = EN,
 ): PlannedAlert[] {
   const out: PlannedAlert[] = [];
   const cur = segments[index];
@@ -73,13 +77,13 @@ export function planAlerts(
     if (out.length >= max) break;
     const seg = segments[i];
     if (!seg) {
-      out.push({ atMs: at, title: 'Time!', body: 'Workout complete', kind: 'finish', segmentIndex: i });
+      out.push({ atMs: at, title: tr.t('alert.time'), body: tr.t('alert.complete'), kind: 'finish', segmentIndex: i });
       break;
     }
     out.push({
       atMs: at,
-      title: alertTitle(seg),
-      body: alertBody(seg, segments[i + 1]),
+      title: alertTitle(seg, tr),
+      body: alertBody(seg, segments[i + 1], tr),
       kind: seg.kind,
       segmentIndex: i,
     });

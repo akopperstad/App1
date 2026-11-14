@@ -900,6 +900,14 @@
   display: inline-flex;
   align-items: center;
   gap: var(--s-2);
+  min-width: 0;
+}
+/* Long translated labels ellipsize instead of spilling past the rounded edge. */
+.pill > span:not(.hold__fill) {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 .pill:hover:not(:disabled) {
   color: var(--fg);

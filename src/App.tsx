@@ -11,6 +11,7 @@ import { useShareLinks, withLaunchImport } from './features/shareActions';
 import { useNativeDeepLinks } from './native/useDeepLinks';
 import { Toaster } from './features/toast';
 import { useDocumentLang } from './i18n';
+import { setThemeColor, THEME_COLORS } from './lib/themeColor';
 
 /**
  * Screen stack synced with browser history so the hardware / browser back
@@ -123,9 +124,8 @@ function useTheme() {
     const apply = () => {
       const resolved = theme === 'system' ? (mq.matches ? 'light' : 'dark') : theme;
       root.dataset.theme = resolved;
-      document
-        .querySelector('meta[name="theme-color"]')
-        ?.setAttribute('content', resolved === 'light' ? '#f6f6f4' : '#0a0b0d');
+      // The Run screen may be tinting the bar with its phase colour; it re-applies its own on theme change.
+      if (!document.querySelector('.run[data-tinted]')) setThemeColor(THEME_COLORS[resolved]);
     };
     apply();
     mq.addEventListener('change', apply);

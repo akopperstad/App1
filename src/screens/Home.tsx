@@ -1,6 +1,7 @@
 import { useMemo, useState, type CSSProperties } from 'react';
-import { BUILT_IN_PRESETS, MODES, describe, modeInfo, totalSeconds } from '../engine/modes';
+import { BUILT_IN_PRESETS, MODES, benchConfig, benchName, describe, modeInfo, modeTagline, modeTitle, totalSeconds } from '../engine/modes';
 import type { WorkoutConfig } from '../engine/types';
+import { useT, type Translator } from '../i18n';
 import { formatDuration } from '../lib/format';
 import { useNav } from '../nav';
 import {
@@ -20,31 +21,33 @@ import './Home.css';
 const accentStyle = (accent: string) => ({ '--accent': accent }) as CSSProperties;
 
 /** Very compact summary for the mode-card pill. */
-function pill(c: WorkoutConfig): string {
+function pill(c: WorkoutConfig, tr: Translator): string {
+  // Tight card: "40s/20s" even where the full form is "40 s" (no-break space).
+  const d = (sec: number) => formatDuration(sec, tr).replace(/\u00a0(?=[a-z](?![a-z]))/g, '');
   switch (c.mode) {
     case 'amrap':
-      return c.sets > 1 ? `${c.sets} × ${formatDuration(c.durationSec)}` : formatDuration(c.durationSec);
+      return c.sets > 1 ? `${c.sets} × ${d(c.durationSec)}` : d(c.durationSec);
     case 'emom':
-      return `${c.rounds} × ${formatDuration(c.intervalSec)}`;
+      return `${c.rounds} × ${d(c.intervalSec)}`;
     case 'tabata':
     case 'interval':
-      return `${c.rounds} × ${formatDuration(c.workSec)}/${formatDuration(c.restSec)}`;
+      return `${c.rounds} × ${d(c.workSec)}/${d(c.restSec)}`;
     case 'deathby':
-      return `${c.movement || 'Reps'} +${c.increment}`;
+      return `${c.movement || tr.t('desc.reps')} +${c.increment}`;
     case 'stopwatch':
-      return 'Laps';
+      return tr.t('desc.lapsShort');
     case 'custom':
-      return `${Array.isArray(c.steps) ? c.steps.length : 0} steps × ${c.rounds}`;
+      return tr.tp('desc.steps', Array.isArray(c.steps) ? c.steps.length : 0, { rounds: c.rounds });
     default:
-      return describe(c);
+      return describe(c, tr);
   }
 }
 
-function summary(c: WorkoutConfig): string {
+function summary(c: WorkoutConfig, tr: Translator): string {
   const total = totalSeconds(c);
-  const d = describe(c);
+  const d = describe(c, tr);
   if (total === null || c.mode === 'countdown' || (c.mode === 'amrap' && c.sets === 1)) return d;
-  return `${d} · ${formatDuration(total)}`;
+  return `${d} · ${formatDuration(total, tr)}`;
 }
 
 function startOfDay(t: number): number {
@@ -54,19 +57,19 @@ function startOfDay(t: number): number {
 }
 
 /** "Today", "Yesterday", "Tuesday", "Nov 2". */
-function whenLabel(t: number, now: number): string {
+function whenLabel(t: number, now: number, tr: Translator): string {
   const today = startOfDay(now);
   const day = startOfDay(t);
-  if (day === today) return 'Today';
+  if (day === today) return tr.t('hist.today');
   const y = new Date(today);
   y.setDate(y.getDate() - 1);
-  if (day === y.getTime()) return 'Yesterday';
-  if (today - day < 6 * 86_400_000) return new Date(t).toLocaleDateString(undefined, { weekday: 'long' });
-  return new Date(t).toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
+  if (day === y.getTime()) return tr.t('hist.yesterday');
+  if (today - day < 6 * 86_400_000) return new Date(t).toLocaleDateString(tr.locale, { weekday: 'long' });
+  return new Date(t).toLocaleDateString(tr.locale, { month: 'short', day: 'numeric' });
 }
 
 /** Monday-first week with a flag for each day that has a session. */
-function weekModel(list: HistoryEntry[], now: number) {
+function weekModel(list: HistoryEntry[], now: number, locale: string) {
   const today = new Date(startOfDay(now));
   const dow = (today.getDay() + 6) % 7;
   const monday = new Date(today);
@@ -78,8 +81,8 @@ function weekModel(list: HistoryEntry[], now: number) {
     d.setDate(monday.getDate() + i);
     return {
       key: i,
-      letter: d.toLocaleDateString(undefined, { weekday: 'narrow' }),
-      name: d.toLocaleDateString(undefined, { weekday: 'long' }),
+      letter: d.toLocaleDateString(locale, { weekday: 'narrow' }),
+      name: d.toLocaleDateString(locale, { weekday: 'long' }),
       done: trained.has(d.getTime()),
       today: i === dow,
       future: i > dow,
@@ -128,6 +131,8 @@ function BrandMark() {
 
 export function Home() {
   const nav = useNav();
+  const tr = useT();
+  const { t, tp, locale } = tr;
   const presets = usePresets();
   const history = useHistory();
   const last = useStore(lastConfigStore);
@@ -136,10 +141,11 @@ export function Home() {
 
   const recent = history[0];
   const now = Date.now();
-  const today = new Date(now).toLocaleDateString(undefined, { weekday: 'long', month: 'short', day: 'numeric' });
-  const week = useMemo(() => weekModel(history, now), [history, now]);
+  const today = new Date(now).toLocaleDateString(locale, { weekday: 'long', month: 'short', day: 'numeric' });
+  const week = useMemo(() => weekModel(history, now, locale), [history, now, locale]);
   const recentInfo = recent ? modeInfo(recent.mode) : null;
   const recentTotal = recent ? totalSeconds(recent.config) : null;
+  const recentTitle = recent ? modeTitle(recent.mode, tr) : '';
 
   return (
     <div className="ui-page home">
@@ -152,9 +158,9 @@ export function Home() {
               <h1 className="home__brand">Pulse</h1>
             </div>
           </div>
-          <nav className="home__nav" aria-label="Main">
-            <IconButton icon="history" label="History" variant="filled" size={20} onClick={() => nav.go({ name: 'history' })} />
-            <IconButton icon="settings" label="Settings" variant="filled" size={20} onClick={() => nav.go({ name: 'settings' })} />
+          <nav className="home__nav" aria-label={t('home.nav')}>
+            <IconButton icon="history" label={t('hist.title')} variant="filled" size={20} onClick={() => nav.go({ name: 'history' })} />
+            <IconButton icon="settings" label={t('settings.title')} variant="filled" size={20} onClick={() => nav.go({ name: 'settings' })} />
           </nav>
         </header>
 
@@ -163,22 +169,22 @@ export function Home() {
             type="button"
             className="home__week"
             onClick={() => nav.go({ name: 'history' })}
-            aria-label={`This week: ${week.count} workout${week.count === 1 ? '' : 's'}, ${week.minutes} minutes. Open history`}
+            aria-label={tp('home.weekAria', week.count, { min: week.minutes })}
           >
             <span className="home__week-stat">
               <span className="home__week-num num">{week.count}</span>
               <span className="home__week-cap">
-                {week.count === 1 ? 'workout' : 'workouts'}
+                {tp('home.weekWorkouts', week.count)}
                 <br />
-                this week
+                {t('home.weekThis')}
               </span>
             </span>
             <span className="home__week-stat">
               <span className="home__week-num num">{week.minutes}</span>
               <span className="home__week-cap">
-                minutes
+                {t('home.weekMinutes')}
                 <br />
-                trained
+                {t('home.weekTrained')}
               </span>
             </span>
             <span className="home__days" aria-hidden="true">
@@ -202,26 +208,26 @@ export function Home() {
             className="home__quick"
             style={accentStyle(recentInfo.accent)}
             onClick={() => startWorkout(nav, recent.config)}
-            aria-label={`Repeat last workout: ${recent.name || recentInfo.title}`}
+            aria-label={t('home.repeatAria', { name: recent.name || recentTitle })}
           >
             <span className="home__quick-glow" aria-hidden />
             <span className="home__quick-top">
               <span className="home__eyebrow">
-                <Icon name="repeat" size={14} strokeWidth={2.4} /> Quick start
+                <Icon name="repeat" size={14} strokeWidth={2.4} /> {t('home.quickStart')}
               </span>
-              <span className="home__quick-when">{whenLabel(recent.startedAt, now)}</span>
+              <span className="home__quick-when">{whenLabel(recent.startedAt, now, tr)}</span>
             </span>
             <span className="home__quick-main">
               <span className="ui-glyph ui-glyph--solid home__quick-glyph" aria-hidden>
                 <Icon name={modeIcon(recent.mode)} size={26} strokeWidth={2.2} />
               </span>
               <span className="home__quick-text">
-                <span className="home__quick-name">{recent.name || recentInfo.title}</span>
+                <span className="home__quick-name">{recent.name || recentTitle}</span>
                 <span className="home__quick-meta num">
-                  {(recent.name || recentInfo.title) !== recentInfo.title && `${recentInfo.title} · `}
-                  {describe(recent.config)}
+                  {recent.name && recent.name !== recentInfo.title && recent.name !== recentTitle && `${recentTitle} · `}
+                  {describe(recent.config, tr)}
                   {recentTotal !== null && recent.config.mode !== 'countdown' && recent.config.mode !== 'amrap'
-                    ? ` · ${formatDuration(recentTotal)}`
+                    ? ` · ${formatDuration(recentTotal, tr)}`
                     : ''}
                 </span>
               </span>
@@ -232,10 +238,12 @@ export function Home() {
           </button>
         )}
 
-        <Section title="Timers" plain>
+        <Section title={t('home.timers')} plain>
           <div className="home__grid">
             {MODES.map((m) => {
               const cfg = last[m.mode];
+              const title = modeTitle(m.mode, tr);
+              const tagline = modeTagline(m.mode, tr);
               return (
                 <button
                   key={m.mode}
@@ -244,15 +252,20 @@ export function Home() {
                   data-mode={m.mode}
                   style={accentStyle(m.accent)}
                   onClick={() => nav.go({ name: 'configure', mode: m.mode })}
-                  aria-label={`${m.title}: ${m.tagline}`}
+                  aria-label={`${title}: ${tagline}`}
                 >
                   <span className="mode-card__glow" aria-hidden />
                   <span className="ui-glyph mode-card__glyph" aria-hidden>
                     <Icon name={modeIcon(m.mode)} size={22} strokeWidth={2.2} />
                   </span>
-                  <span className="mode-card__title">{m.title}</span>
-                  <span className="mode-card__tag">{m.tagline}</span>
-                  <span className={`mode-card__last num${cfg ? '' : ' is-default'}`}>{pill(cfg ?? m.defaults)}</span>
+                  <span
+                    className="mode-card__title"
+                    style={{ '--chars': Math.max(...title.split(/\s+/).map((w) => w.length)) } as CSSProperties}
+                  >
+                    {title}
+                  </span>
+                  <span className="mode-card__tag">{tagline}</span>
+                  <span className={`mode-card__last num${cfg ? '' : ' is-default'}`}>{pill(cfg ?? m.defaults, tr)}</span>
                 </button>
               );
             })}
@@ -260,7 +273,7 @@ export function Home() {
         </Section>
 
         <Section
-          title="Saved workouts"
+          title={t('home.saved')}
           plain
           action={presets.length > 0 ? <span className="home__count num">{presets.length}</span> : undefined}
         >
@@ -270,20 +283,21 @@ export function Home() {
                 <Icon name="star" size={20} />
               </span>
               <p>
-                Tap <strong>Save</strong> when configuring a timer and your workouts will live here, one tap from
-                starting.
+                {t('home.savedEmpty')
+                  .split('{save}')
+                  .flatMap((part, i) => (i === 0 ? [part] : [<strong key={i}>{t('common.save')}</strong>, part]))}
               </p>
             </div>
           ) : (
             <div className="ui-card home__list">
               {presets.map((p) => (
-                <PresetRow key={p.id} preset={p} onRun={() => startWorkout(nav, p.config)} onMenu={() => setMenu(p)} />
+                <PresetRow key={p.id} preset={p} tr={tr} onRun={() => startWorkout(nav, p.config)} onMenu={() => setMenu(p)} />
               ))}
             </div>
           )}
         </Section>
 
-        <Section title="Benchmarks" plain>
+        <Section title={t('home.benchmarks')} plain>
           <div className="home__bench" role="list">
             {BUILT_IN_PRESETS.map((b) => {
               const info = modeInfo(b.config.mode);
@@ -294,16 +308,16 @@ export function Home() {
                   type="button"
                   className="bench-card"
                   style={accentStyle(info.accent)}
-                  onClick={() => nav.go({ name: 'configure', mode: b.config.mode, initial: b.config })}
+                  onClick={() => nav.go({ name: 'configure', mode: b.config.mode, initial: benchConfig(b, tr) })}
                 >
                   <span className="bench-card__head">
                     <span className="ui-glyph bench-card__glyph" aria-hidden>
                       <Icon name={modeIcon(b.config.mode)} size={18} strokeWidth={2.2} />
                     </span>
-                    <span className="bench-card__mode">{info.title}</span>
+                    <span className={`bench-card__mode${modeTitle(b.config.mode, tr).length > 11 ? ' is-long' : ''}`}>{modeTitle(b.config.mode, tr)}</span>
                   </span>
-                  <span className="bench-card__name">{b.name}</span>
-                  <span className="bench-card__desc num">{describe(b.config)}</span>
+                  <span className="bench-card__name">{benchName(b, tr)}</span>
+                  <span className="bench-card__desc num">{describe(b.config, tr)}</span>
                 </button>
               );
             })}
@@ -316,7 +330,7 @@ export function Home() {
           <ActionList
             items={[
               {
-                label: 'Start now',
+                label: t('home.startNow'),
                 icon: 'play',
                 onSelect: () => {
                   const c = menu.config;
@@ -325,7 +339,7 @@ export function Home() {
                 },
               },
               {
-                label: 'Edit',
+                label: t('common.edit'),
                 icon: 'edit',
                 onSelect: () => {
                   const p = menu;
@@ -334,7 +348,7 @@ export function Home() {
                 },
               },
               {
-                label: 'Share',
+                label: t('common.share'),
                 icon: 'share',
                 onSelect: () => {
                   const c = menu.config;
@@ -343,7 +357,7 @@ export function Home() {
                 },
               },
               {
-                label: 'Delete',
+                label: t('common.delete'),
                 icon: 'trash',
                 danger: true,
                 onSelect: () => {
@@ -359,11 +373,11 @@ export function Home() {
       <Sheet
         open={!!confirmDelete}
         onClose={() => setConfirmDelete(null)}
-        title="Delete workout?"
+        title={t('home.deleteTitle')}
         footer={
           <>
             <Button variant="secondary" onClick={() => setConfirmDelete(null)} data-autofocus>
-              Cancel
+              {t('common.cancel')}
             </Button>
             <Button
               variant="danger"
@@ -373,39 +387,39 @@ export function Home() {
                 setConfirmDelete(null);
               }}
             >
-              Delete
+              {t('common.delete')}
             </Button>
           </>
         }
       >
         <p className="home__confirm">
-          “{confirmDelete?.name}” will be removed from your saved workouts. Your history is not affected.
+          {t('home.deleteBody', { name: confirmDelete?.name ?? '' })}
         </p>
       </Sheet>
     </div>
   );
 }
 
-function PresetRow({ preset, onRun, onMenu }: { preset: Preset; onRun: () => void; onMenu: () => void }) {
+function PresetRow({ preset, tr, onRun, onMenu }: { preset: Preset; tr: Translator; onRun: () => void; onMenu: () => void }) {
   const info = modeInfo(preset.config.mode);
   const press = useLongPress(onRun, onMenu);
   return (
     <div className="preset-row" style={accentStyle(info.accent)}>
-      <button type="button" className="preset-row__main" aria-label={`Start ${preset.name}`} {...press}>
+      <button type="button" className="preset-row__main" aria-label={tr.t('home.startPreset', { name: preset.name })} {...press}>
         <span className="ui-glyph preset-row__glyph" aria-hidden>
           <Icon name={modeIcon(preset.config.mode)} size={20} strokeWidth={2.2} />
         </span>
         <span className="preset-row__text">
           <span className="preset-row__name">{preset.name}</span>
           <span className="preset-row__meta num">
-            {info.title} · {summary(preset.config)}
+            {modeTitle(preset.config.mode, tr)} · {summary(preset.config, tr)}
           </span>
         </span>
         <span className="preset-row__play" aria-hidden>
           <Icon name="play" size={14} />
         </span>
       </button>
-      <IconButton icon="more" label={`More options for ${preset.name}`} onClick={onMenu} />
+      <IconButton icon="more" label={tr.t('home.moreFor', { name: preset.name })} onClick={onMenu} />
     </div>
   );
 }

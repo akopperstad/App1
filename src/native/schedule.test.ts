@@ -1,3 +1,4 @@
+import { translator } from '../i18n/core';
 import { describe, expect, it } from 'vitest';
 import { compile } from '../engine/compile';
 import type { Segment } from '../engine/types';
@@ -99,5 +100,16 @@ describe('planAlerts', () => {
     const seg: Segment = { kind: 'work', label: '', durationMs: null, direction: 'up' };
     expect(alertTitle(seg)).toBe('Work');
     expect(alertTitle({ ...seg, kind: 'rest', durationMs: 15_000 })).toBe('Rest — 0:15');
+  });
+});
+
+describe('planAlerts translated', () => {
+  it('uses the translator for alert texts (labels come from the nb-compiled plan)', () => {
+    const nb = translator('nb');
+    const segs = compile({ mode: 'tabata', workSec: 20, restSec: 10, rounds: 2, sets: 1, restBetweenSetsSec: 0, movements: [] }, 0, nb);
+    const plan = planAlerts(segs, 0, 0, undefined, nb);
+    expect(plan.map((a) => a.title)).toEqual(['Pause — 0:10', 'Jobb — Runde 2/2', 'Tid!']);
+    expect(plan[0].body).toBe('Neste: Jobb — Runde 2/2');
+    expect(plan[2].body).toBe('Økta er ferdig');
   });
 });

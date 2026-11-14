@@ -482,6 +482,17 @@ export const en = {
   'settings.mix.hintWeb': 'Beeps mix with Spotify and other apps — applies in the Pulse app for iPhone and Android',
   'settings.bgAlerts': 'Alerts when locked',
   'settings.bgAlerts.hint': 'A notification at each phase change while your phone is locked',
+
+  // ---- background alerts (native notifications)
+  'alert.round': '{label} — Round {n}/{total}',
+  'alert.timed': '{label} — {time}',
+  'alert.set': 'Set {n}/{total}',
+  'alert.tapNext': 'Tap Next in Pulse when done',
+  'alert.upNext': 'Up next: {what}',
+  'alert.time': 'Time!',
+  'alert.complete': 'Workout complete',
+  'alert.channel': 'Workout cues',
+  'alert.channelDesc': 'Sound and vibration at each work / rest change while your phone is locked or Pulse is in the background.',
 };
 
 export type Key = keyof typeof en;

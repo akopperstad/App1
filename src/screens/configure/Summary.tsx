@@ -2,13 +2,16 @@ import { useMemo } from 'react';
 import { compile } from '../../engine/compile';
 import { totalSeconds } from '../../engine/modes';
 import type { WorkoutConfig } from '../../engine/types';
+import { useT } from '../../i18n';
 import { formatClockString, formatDuration } from '../../lib/format';
 
 const MAX_BLOCKS = 160;
 
 /** Live summary: total time, interval count and a proportional timeline bar. */
 export function Summary({ config }: { config: WorkoutConfig }) {
-  const segments = useMemo(() => compile(config, 0).filter((s) => s.kind !== 'prep'), [config]);
+  const tr = useT();
+  const { t, tp } = tr;
+  const segments = useMemo(() => compile(config, 0, tr).filter((s) => s.kind !== 'prep'), [config, tr]);
   const total = totalSeconds(config);
 
   const timed = segments.filter((s) => s.durationMs !== null);
@@ -21,26 +24,26 @@ export function Summary({ config }: { config: WorkoutConfig }) {
   let caption: string;
   if (config.mode === 'deathby') {
     big = formatClockString(config.intervalSec * config.maxRounds * 1000);
-    caption = 'Max time · until failure';
+    caption = t('sum.maxTime');
   } else if (total !== null) {
     big = formatClockString(total * 1000);
-    caption = 'Total time';
+    caption = t('sum.totalTime');
   } else {
-    big = 'Open';
-    caption = config.mode === 'stopwatch' ? 'Counts up · no limit' : 'Open-ended · you finish it';
+    big = t('sum.open');
+    caption = config.mode === 'stopwatch' ? t('sum.countsUp') : t('sum.openEnded');
   }
 
   let countLabel: string;
   let count: number;
   if (config.mode === 'deathby') {
     count = config.maxRounds;
-    countLabel = 'max rounds';
+    countLabel = t('sum.maxRounds');
   } else if (config.mode === 'fortime') {
     count = config.targetRounds;
-    countLabel = 'target rounds';
+    countLabel = t('sum.targetRounds');
   } else {
     count = segments.length;
-    countLabel = count === 1 ? 'interval' : 'intervals';
+    countLabel = tp('sum.intervals', count);
   }
   const showCount = count > 1 || (config.mode === 'fortime' && count > 0);
 
@@ -48,7 +51,7 @@ export function Summary({ config }: { config: WorkoutConfig }) {
   const showBar = segments.length > 1;
 
   return (
-    <section className="cfg-summary" aria-label="Workout summary">
+    <section className="cfg-summary" aria-label={t('sum.aria')}>
       <div className="cfg-summary__top">
         <div>
           <div className="cfg-summary__big num">{big}</div>
@@ -62,7 +65,7 @@ export function Summary({ config }: { config: WorkoutConfig }) {
         )}
       </div>
       {showBar && (
-        <div className="cfg-timeline" role="img" aria-label={`Timeline of ${segments.length} intervals`}>
+        <div className="cfg-timeline" role="img" aria-label={t('sum.timeline', { n: segments.length })}>
           {blocks.map((s, i) => (
             <span
               key={i}
@@ -75,14 +78,16 @@ export function Summary({ config }: { config: WorkoutConfig }) {
       {showBar && (
         <div className="cfg-legend">
           <span className="is-work">
-            Work{workMs > 0 && <b className="num">{formatDuration(Math.round(workMs / 1000))}</b>}
+            {t('seg.work')}
+            {workMs > 0 && <b className="num">{formatDuration(Math.round(workMs / 1000), tr)}</b>}
           </span>
           {restMs > 0 && (
             <span className="is-rest">
-              Rest<b className="num">{formatDuration(Math.round(restMs / 1000))}</b>
+              {t('seg.rest')}
+              <b className="num">{formatDuration(Math.round(restMs / 1000), tr)}</b>
             </span>
           )}
-          {segments.some((s) => s.durationMs === null) && <span className="is-open">Untimed</span>}
+          {segments.some((s) => s.durationMs === null) && <span className="is-open">{t('sum.untimed')}</span>}
         </div>
       )}
     </section>

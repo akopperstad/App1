@@ -1,6 +1,7 @@
 import { formatClock, formatClockString } from '../../lib/format';
 import type { Segment, Snapshot, WorkoutConfig } from '../../engine/types';
 import type { Settings } from '../../state/store';
+import { EN, type Translator } from '../../i18n/core';
 
 export type Phase = 'idle' | 'prep' | 'work' | 'rest' | 'done';
 
@@ -80,37 +81,38 @@ export function phaseOf(snap: Snapshot): Phase {
   return snap.segment.kind;
 }
 
-export function phaseLabel(seg: Segment): string {
-  if (seg.kind === 'prep') return 'Get ready';
+export function phaseLabel(seg: Segment, { t }: Translator = EN): string {
+  if (seg.kind === 'prep') return seg.label || t('seg.getReady');
   return seg.label;
 }
 
-/** "Round 3 / 8 · Set 1 / 2" */
-export function roundInfo(seg: Segment, config: WorkoutConfig): string {
+/** Rest segments whose `detail` announces what comes next ("Next: set 2 of 3"). */
+export function isUpNextRest(seg: Segment): boolean {
+  return seg.type === 'amrapRest' || seg.type === 'setRest' || seg.type === 'roundRest';
+}
+
+/** "Round 3 / 8 · Set 1 / 2" (`long`: "Round 3 of 8. Set 1 of 2" for screen readers). */
+export function roundInfo(seg: Segment, config: WorkoutConfig, { t }: Translator = EN, long = false): string {
   const parts: string[] = [];
   if (seg.round !== undefined) {
-    if (config.mode === 'deathby') parts.push(`Round ${seg.round}`);
-    else if (seg.totalRounds && seg.totalRounds > 1) parts.push(`Round ${seg.round} / ${seg.totalRounds}`);
+    if (config.mode === 'deathby') parts.push(t('run.round', { n: seg.round }));
+    else if (seg.totalRounds && seg.totalRounds > 1)
+      parts.push(t(long ? 'run.roundOfLong' : 'run.roundOf', { n: seg.round, total: seg.totalRounds }));
   }
   if (seg.set !== undefined && seg.totalSets && seg.totalSets > 1) {
-    parts.push(`Set ${seg.set} / ${seg.totalSets}`);
+    parts.push(t(long ? 'run.setOfLong' : 'run.setOf', { n: seg.set, total: seg.totalSets }));
   }
-  return parts.join(' · ');
+  return parts.join(long ? '. ' : ' · ');
 }
 
 /** Short label for a segment, for "Next up". */
-export function segmentShort(seg: Segment): string {
-  const name =
-    seg.kind === 'prep'
-      ? 'Get ready'
-      : seg.detail && seg.kind === 'work' && !/^Next:/.test(seg.detail)
-        ? seg.detail
-        : seg.label;
-  return name;
+export function segmentShort(seg: Segment, tr: Translator = EN): string {
+  if (seg.kind === 'prep') return phaseLabel(seg, tr);
+  return seg.detail && seg.kind === 'work' ? seg.detail : seg.label;
 }
 
-export function segmentTime(seg: Segment): string {
-  return seg.durationMs === null ? 'open' : formatClock(seg.durationMs, { roundUp: true }).main;
+export function segmentTime(seg: Segment, { t }: Translator = EN): string {
+  return seg.durationMs === null ? t('run.open') : formatClock(seg.durationMs, { roundUp: true }).main;
 }
 
 /** Value (0..1) the ring should show. Down: remaining fraction; up: progress to cap or within the minute. */
@@ -125,11 +127,11 @@ export function ringValue(snap: Snapshot, config: WorkoutConfig, settings: Setti
   return (snap.segmentElapsedMs % 60_000) / 60_000;
 }
 
-export function announceFor(seg: Segment, config: WorkoutConfig): string {
-  const bits = [phaseLabel(seg)];
+export function announceFor(seg: Segment, config: WorkoutConfig, tr: Translator = EN): string {
+  const bits = [phaseLabel(seg, tr)];
   if (seg.detail) bits.push(seg.detail);
-  const info = roundInfo(seg, config);
-  if (info) bits.push(info.replace(/ \/ /g, ' of '));
+  const info = roundInfo(seg, config, tr, true);
+  if (info) bits.push(info);
   if (seg.durationMs !== null) bits.push(formatClockString(seg.durationMs, { roundUp: true }));
   return bits.join('. ');
 }

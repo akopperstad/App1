@@ -1,4 +1,5 @@
 import { LocalNotifications, type LocalNotificationSchema } from '@capacitor/local-notifications';
+import { getT } from '../i18n';
 import { isNative, platform } from './platform';
 import type { PlannedAlert } from './schedule';
 
@@ -70,9 +71,9 @@ export function prepareBackgroundCues(): Promise<boolean> {
       if (platform() === 'android') {
         await LocalNotifications.createChannel({
           id: CUE_CHANNEL_ID,
-          name: 'Workout cues',
-          description:
-            'Sound and vibration at each work / rest change while your phone is locked or Pulse is in the background.',
+          // Re-creating a channel with the same id updates its name / description (not its sound).
+          name: getT().t('alert.channel'),
+          description: getT().t('alert.channelDesc'),
           importance: 5,
           visibility: 1,
           sound: CUE_SOUND,

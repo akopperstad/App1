@@ -1,10 +1,12 @@
+import { EN, isRestWord, type Key, type Translator } from '../i18n/core';
 import { formatDuration } from '../lib/format';
 import type { Mode, WorkoutConfig } from './types';
 
 export interface ModeInfo {
   mode: Mode;
+  /** English title (reference / fallback) — UI uses modeTitle(mode, tr). */
   title: string;
-  /** One-line explanation shown on the mode card. */
+  /** English one-line explanation — UI uses modeTagline(mode, tr). */
   tagline: string;
   /** CSS custom property name for this mode's accent colour. */
   accent: string;
@@ -117,35 +119,58 @@ function list<T>(v: T[] | undefined): T[] {
   return Array.isArray(v) ? v : [];
 }
 
-/** Short human summary of a config, e.g. "12 min", "8 × 20s / 10s". */
-export function describe(c: WorkoutConfig): string {
+/** Mode name in the user's language ("AMRAP", "Intervaller", "Stoppuhr"…). */
+export function modeTitle(mode: Mode, tr: Translator = EN): string {
+  return tr.t(`mode.${mode}` as Key);
+}
+
+/** One-line explanation for the mode card / configure header. */
+export function modeTagline(mode: Mode, tr: Translator = EN): string {
+  return tr.t(`modeTag.${mode}` as Key);
+}
+
+/**
+ * Default config for a mode with user-visible default text (custom step
+ * names) in the user's language.
+ */
+export function localizedDefaults(mode: Mode, tr: Translator = EN): WorkoutConfig {
+  const d = modeInfo(mode).defaults;
+  if (d.mode !== 'custom') return d;
+  return {
+    ...d,
+    steps: d.steps.map((st) => ({
+      ...st,
+      label: isRestWord(st.label) ? tr.t('seg.rest') : st.label === 'Run 400m' ? tr.t('default.run400') : st.label,
+    })),
+  };
+}
+
+/** Short human summary of a config, e.g. "12 min", "8 × 20s / 10s" (in `tr`'s language). */
+export function describe(c: WorkoutConfig, tr: Translator = EN): string {
+  const { t, tp } = tr;
+  const d = (sec: number) => formatDuration(sec, tr);
   switch (c.mode) {
     case 'amrap':
       return c.sets > 1
-        ? `${c.sets} × ${formatDuration(c.durationSec)}` +
-            (c.restBetweenSetsSec ? ` · ${formatDuration(c.restBetweenSetsSec)} rest` : '')
-        : formatDuration(c.durationSec);
-    case 'emom':
-    {
+        ? `${c.sets} × ${d(c.durationSec)}` + (c.restBetweenSetsSec ? ` · ${t('desc.rest', { d: d(c.restBetweenSetsSec) })}` : '')
+        : d(c.durationSec);
+    case 'emom': {
       const n = list(c.movements).filter((m) => typeof m === 'string' && m.trim()).length;
-      return `${c.rounds} × ${formatDuration(c.intervalSec)}` + (n ? ` · ${n} movement${n === 1 ? '' : 's'}` : '');
+      return `${c.rounds} × ${d(c.intervalSec)}` + (n ? ` · ${tp('desc.movements', n)}` : '');
     }
     case 'tabata':
     case 'interval':
-      return (
-        `${c.rounds} × ${formatDuration(c.workSec)} / ${formatDuration(c.restSec)}` +
-        (c.sets > 1 ? ` · ${c.sets} sets` : '')
-      );
+      return `${c.rounds} × ${d(c.workSec)} / ${d(c.restSec)}` + (c.sets > 1 ? ` · ${tp('desc.sets', c.sets)}` : '');
     case 'fortime':
-      return c.capSec > 0 ? `Cap ${formatDuration(c.capSec)}` : 'No cap';
+      return c.capSec > 0 ? t('desc.cap', { d: d(c.capSec) }) : t('desc.noCap');
     case 'countdown':
-      return formatDuration(c.durationSec);
+      return d(c.durationSec);
     case 'stopwatch':
-      return 'Laps & splits';
+      return t('desc.laps');
     case 'deathby':
-      return `${c.movement || 'Reps'} · +${c.increment} every ${formatDuration(c.intervalSec)}`;
+      return t('desc.deathby', { move: c.movement || t('desc.reps'), n: c.increment, d: d(c.intervalSec) });
     case 'custom':
-      return `${list(c.steps).length} steps × ${c.rounds}`;
+      return tp('desc.steps', list(c.steps).length, { rounds: c.rounds });
   }
 }
 
@@ -190,11 +215,16 @@ export function totalSeconds(c: WorkoutConfig): number | null {
   }
 }
 
-/** Built-in benchmark workouts users can start in one tap. */
-export const BUILT_IN_PRESETS: { name: string; config: WorkoutConfig }[] = [
+/**
+ * Built-in benchmark workouts users can start in one tap. `nameKey` marks the
+ * descriptive names that are translated (see benchName); hero / girl WODs
+ * ("Cindy", "Fran", "Fight Gone Bad") are proper names and stay as they are.
+ */
+export const BUILT_IN_PRESETS: { name: string; nameKey?: Key; config: WorkoutConfig }[] = [
   { name: 'Cindy', config: { mode: 'amrap', durationSec: 20 * 60, sets: 1, restBetweenSetsSec: 0, name: 'Cindy' } },
   {
     name: 'Classic Tabata',
+    nameKey: 'bench.classicTabata',
     config: { mode: 'tabata', workSec: 20, restSec: 10, rounds: 8, sets: 1, restBetweenSetsSec: 60, movements: [], name: 'Classic Tabata' },
   },
   {
@@ -220,10 +250,12 @@ export const BUILT_IN_PRESETS: { name: string; config: WorkoutConfig }[] = [
   },
   {
     name: 'Alternating EMOM',
+    nameKey: 'bench.altEmom',
     config: { mode: 'emom', intervalSec: 60, rounds: 20, movements: ['Strength', 'Burpees', 'Rest', 'Core'], name: 'Alternating EMOM' },
   },
   {
     name: '4 × 4 Norwegian',
+    nameKey: 'bench.norwegian',
     config: { mode: 'interval', workSec: 240, restSec: 180, rounds: 4, sets: 1, restBetweenSetsSec: 0, movements: [], name: '4 × 4 Norwegian' },
   },
   {
@@ -235,3 +267,13 @@ export const BUILT_IN_PRESETS: { name: string; config: WorkoutConfig }[] = [
     config: { mode: 'deathby', intervalSec: 60, startReps: 1, increment: 1, maxRounds: 30, movement: 'Burpees', name: 'Death by Burpees' },
   },
 ];
+
+/** A benchmark's display name in the user's language. */
+export function benchName(b: (typeof BUILT_IN_PRESETS)[number], tr: Translator = EN): string {
+  return b.nameKey ? tr.t(b.nameKey) : b.name;
+}
+
+/** A benchmark's config with its name localized (what Configure / Run / History show). */
+export function benchConfig(b: (typeof BUILT_IN_PRESETS)[number], tr: Translator = EN): WorkoutConfig {
+  return { ...b.config, name: benchName(b, tr) };
+}

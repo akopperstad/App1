@@ -17,19 +17,19 @@ const config: CapacitorConfig = {
   appName: 'Pulse',
   webDir: 'dist',
   // The web app is bundled into the binary (works offline, no remote URL).
-  backgroundColor: '#0a0b0d',
+  backgroundColor: '#050506',
   ios: {
     // Let the web view extend under the status bar / home indicator;
     // safe-area insets are handled in CSS via viewport-fit=cover.
     contentInset: 'never',
-    backgroundColor: '#0a0b0d',
+    backgroundColor: '#050506',
   },
   plugins: {
     SplashScreen: {
       // Hidden from JS once the first screen has rendered (src/native/bootstrap.ts).
       launchAutoHide: false,
       launchShowDuration: 3000,
-      backgroundColor: '#0a0b0d',
+      backgroundColor: '#050506',
       showSpinner: false,
       androidScaleType: 'CENTER_CROP',
       splashFullScreen: false,

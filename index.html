@@ -3,7 +3,7 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no" />
-    <meta name="theme-color" content="#0a0b0d" />
+    <meta name="theme-color" content="#050506" />
     <meta name="mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-title" content="Pulse" />
     <meta name="application-name" content="Pulse" />
@@ -21,7 +21,7 @@
         var t = (JSON.parse(localStorage.getItem('pulse.settings.v1') || '{}') || {}).theme;
         if (t !== 'light' && t !== 'dark') t = matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark';
         document.documentElement.dataset.theme = t;
-        if (t === 'light') document.querySelector('meta[name="theme-color"]').setAttribute('content', '#f6f6f4');
+        if (t === 'light') document.querySelector('meta[name="theme-color"]').setAttribute('content', '#f3f3ef');
       } catch (e) {}
     </script>
   </head>

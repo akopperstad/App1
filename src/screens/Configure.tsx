@@ -1,5 +1,6 @@
 import { useEffect, useState, type CSSProperties } from 'react';
-import { modeInfo } from '../engine/modes';
+import { localizedDefaults, modeInfo, modeTagline, modeTitle } from '../engine/modes';
+import { useT } from '../i18n';
 import type { Mode, WorkoutConfig } from '../engine/types';
 import { useNav } from '../nav';
 import { lastConfigStore, presetsStore, rememberConfig, savePreset, usePresets } from '../state/store';
@@ -23,12 +24,16 @@ function clone<T>(v: T): T {
 export function Configure({ mode, initial }: ConfigureProps) {
   const nav = useNav();
   const info = modeInfo(mode);
+  const tr = useT();
+  const { t } = tr;
+  const modeName = modeTitle(mode, tr);
   const presets = usePresets();
 
   const [config, setConfig] = useState<WorkoutConfig>(() => {
-    const src = initial ?? lastConfigStore.get()[mode] ?? info.defaults;
+    const defaults = localizedDefaults(mode, tr);
+    const src = initial ?? lastConfigStore.get()[mode] ?? defaults;
     // Guard against a stored config for a different mode shape.
-    return sanitize(clone(src.mode === mode ? src : info.defaults));
+    return sanitize(clone(src.mode === mode ? src : defaults));
   });
 
   // If we were opened from a user preset, remember which one so it can be updated.
@@ -50,7 +55,7 @@ export function Configure({ mode, initial }: ConfigureProps) {
   }, [savedFlash]);
 
   const update = (c: WorkoutConfig) => setConfig(sanitize(c));
-  const issues = problems(config);
+  const issues = problems(config, tr);
 
   const start = () => {
     if (issues.length) return;
@@ -70,7 +75,7 @@ export function Configure({ mode, initial }: ConfigureProps) {
     setConfig({ ...config, name: trimmed });
     setPresetId(p.id);
     setSaveOpen(false);
-    setSavedFlash(`Saved “${trimmed}”`);
+    setSavedFlash(t('cfg.savedFlash', { name: trimmed }));
   };
   const doUpdate = () => {
     if (!trimmed || !preset) return;
@@ -78,26 +83,26 @@ export function Configure({ mode, initial }: ConfigureProps) {
     presetsStore.set((list) => list.map((p) => (p.id === preset.id ? { ...p, name: trimmed, config: next } : p)));
     setConfig(next);
     setSaveOpen(false);
-    setSavedFlash(`Updated “${trimmed}”`);
+    setSavedFlash(t('cfg.updatedFlash', { name: trimmed }));
   };
 
-  const title = config.name?.trim() || info.title;
+  const title = config.name?.trim() || modeName;
 
   return (
     <div className="ui-page cfg" style={{ '--accent': info.accent } as CSSProperties}>
       <div className="ui-page__inner">
-        <TopBar title={<span className="cfg__bar-title">{info.title}</span>} right={<ShareButton config={config} />} />
+        <TopBar title={<span className="cfg__bar-title">{modeName}</span>} right={<ShareButton config={config} />} />
 
         <header className="cfg__hero">
           <span className="cfg__eyebrow">
             <span className="ui-glyph cfg__glyph" aria-hidden>
               <Icon name={modeIcon(mode)} size={16} strokeWidth={2.4} />
             </span>
-            {config.name ? info.title : 'Timer'}
-            {preset && <span className="cfg__badge">Saved</span>}
+            {config.name ? modeName : t('cfg.timer')}
+            {preset && <span className="cfg__badge">{t('cfg.saved')}</span>}
           </span>
           <h2 className="cfg__title">{title}</h2>
-          <p className="cfg__tagline">{info.tagline}</p>
+          <p className="cfg__tagline">{modeTagline(mode, tr)}</p>
         </header>
 
         <Summary config={config} />
@@ -114,11 +119,11 @@ export function Configure({ mode, initial }: ConfigureProps) {
           )}
           {issues.length > 0 && <p className="cfg-bar__issue" role="alert">{issues[0]}</p>}
           <div className="cfg-bar__row">
-            <Button variant="secondary" size="lg" icon={preset ? 'save' : 'star'} onClick={openSave} aria-label={preset ? 'Save changes' : 'Save workout'}>
-              {preset ? 'Update' : 'Save'}
+            <Button variant="secondary" size="lg" icon={preset ? 'save' : 'star'} onClick={openSave} aria-label={preset ? t('cfg.saveChanges') : t('cfg.saveWorkout')}>
+              {preset ? t('cfg.update') : t('common.save')}
             </Button>
             <Button variant="primary" size="lg" icon="play" block onClick={start} disabled={issues.length > 0}>
-              Start
+              {t('common.start')}
             </Button>
           </div>
         </div>
@@ -127,20 +132,20 @@ export function Configure({ mode, initial }: ConfigureProps) {
       <Sheet
         open={saveOpen}
         onClose={() => setSaveOpen(false)}
-        title={preset ? 'Save workout' : 'Save as workout'}
+        title={preset ? t('cfg.saveWorkout') : t('cfg.saveAsWorkout')}
         footer={
           preset ? (
             <>
               <Button variant="secondary" onClick={doSaveNew} disabled={!trimmed}>
-                Save as new
+                {t('cfg.saveAsNew')}
               </Button>
               <Button variant="primary" icon="check" onClick={doUpdate} disabled={!trimmed}>
-                Update
+                {t('cfg.update')}
               </Button>
             </>
           ) : (
             <Button variant="primary" size="lg" icon="check" block onClick={doSaveNew} disabled={!trimmed}>
-              Save workout
+              {t('cfg.saveWorkout')}
             </Button>
           )
         }
@@ -154,20 +159,20 @@ export function Configure({ mode, initial }: ConfigureProps) {
           }}
         >
           <label className="cfg-save__label" htmlFor="preset-name">
-            Name
+            {t('cfg.name')}
           </label>
           <input
             id="preset-name"
             className="ui-input cfg-save__input"
             value={name}
             maxLength={40}
-            placeholder={`My ${info.title}`}
+            placeholder={t('cfg.namePlaceholder', { mode: modeName })}
             autoComplete="off"
             enterKeyHint="done"
             data-autofocus
             onChange={(e) => setName(e.target.value)}
           />
-          <p className="cfg-save__hint">Saved workouts appear on the home screen — tap to start instantly.</p>
+          <p className="cfg-save__hint">{t('cfg.saveHint')}</p>
         </form>
       </Sheet>
     </div>

@@ -1,3 +1,4 @@
+import { useT } from '../../i18n';
 import { formatClockString } from '../../lib/format';
 import { IconPlus, IconUndo } from './icons';
 
@@ -12,6 +13,7 @@ interface Props {
 
 /** Big "+1 Round" tile with the running count, last split and undo. */
 export function RoundCounter({ count, times, target, disabled, onTap, onUndo }: Props) {
+  const { t, tp } = useT();
   const last = times.length ? times[times.length - 1] - (times[times.length - 2] ?? 0) : null;
   const done = target ? count >= target : false;
   return (
@@ -21,7 +23,7 @@ export function RoundCounter({ count, times, target, disabled, onTap, onUndo }: 
         className={`tile tile--rounds${done ? ' is-target' : ''}`}
         onClick={onTap}
         disabled={disabled}
-        aria-label={`Add round. ${count} round${count === 1 ? '' : 's'} so far${target ? ` of ${target}` : ''}`}
+        aria-label={target ? t('rc.ariaTarget', { n: count, target }) : tp('rc.aria', count)}
       >
         <span className="rounds__count num">
           {count}
@@ -29,10 +31,10 @@ export function RoundCounter({ count, times, target, disabled, onTap, onUndo }: 
         </span>
         <span className="rounds__meta">
           <span className="rounds__cta">
-            <IconPlus size={18} /> Round
+            <IconPlus size={18} /> {t('rc.round')}
           </span>
           <span className="rounds__split num">
-            {last !== null ? `last ${formatClockString(last)}` : 'tap each round'}
+            {last !== null ? t('rc.last', { time: formatClockString(last) }) : t('rc.tap')}
           </span>
         </span>
       </button>
@@ -41,7 +43,7 @@ export function RoundCounter({ count, times, target, disabled, onTap, onUndo }: 
         className="tile tile--undo"
         onClick={onUndo}
         disabled={count === 0}
-        aria-label="Undo last round"
+        aria-label={t('rc.undo')}
       >
         <IconUndo size={22} />
       </button>

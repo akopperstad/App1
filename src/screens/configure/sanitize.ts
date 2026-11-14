@@ -1,4 +1,5 @@
 import type { WorkoutConfig } from '../../engine/types';
+import { EN, type Translator } from '../../i18n/core';
 
 const int = (v: number, min: number, max: number) => Math.min(max, Math.max(min, Math.round(Number.isFinite(v) ? v : min)));
 
@@ -49,7 +50,7 @@ export function sanitize(c: WorkoutConfig): WorkoutConfig {
 }
 
 /** Reasons the config can't be started yet (empty = OK). */
-export function problems(c: WorkoutConfig): string[] {
-  if (c.mode === 'custom' && c.steps.length === 0) return ['Add at least one step'];
+export function problems(c: WorkoutConfig, { t }: Translator = EN): string[] {
+  if (c.mode === 'custom' && c.steps.length === 0) return [t('cfg.noSteps')];
   return [];
 }

@@ -3,6 +3,7 @@ import { cuePlayer } from '../audio/cues';
 import { DataSection } from '../features/DataSection';
 import { SoundPackPicker } from '../features/SoundPackPicker';
 import { deviceLang, LANG_NAMES, LANGS, useT } from '../i18n';
+import { isNative } from '../native/platform';
 import { useNav } from '../nav';
 import { updateSettings, useSettings, type Settings } from '../state/store';
 import { Button, Icon, Row, Section, Segmented, Toggle, TopBar, type IconName } from '../components/ui';
@@ -21,7 +22,8 @@ export function SettingsScreen() {
   const langId = useId();
   const set = <K extends keyof Settings>(k: K) => (v: Settings[K]) => updateSettings({ [k]: v } as Partial<Settings>);
   const vol = Math.round(s.volume * 100);
-  const prepOptions = PREP_VALUES.map((v) => ({ value: v, label: v === 0 ? t('common.off') : `${v}s` }));
+  const prepOptions = PREP_VALUES.map((v) => ({ value: v, label: v === 0 ? t('common.off') : t('unit.s', { n: v }) }));
+  const native = isNative();
 
   return (
     <div className="ui-page settings">
@@ -86,6 +88,9 @@ export function SettingsScreen() {
           <Row label={t('settings.milestones')} hint={t('settings.milestones.hint')} icon={<Ico name="flag" />}>
             <Toggle label={t('settings.milestones')} checked={s.milestoneCues} disabled={!s.sound} onChange={set('milestoneCues')} />
           </Row>
+          <Row label={t('settings.mix')} hint={t(native ? 'settings.mix.hint' : 'settings.mix.hintWeb')} icon={<Ico name="music" />}>
+            <Toggle label={t('settings.mix')} checked={s.mixWithMusic} disabled={!s.sound} onChange={set('mixWithMusic')} />
+          </Row>
           <div className="settings__test">
             <Button
               variant="secondary"
@@ -109,6 +114,11 @@ export function SettingsScreen() {
           <Row label={t('settings.flash')} hint={t('settings.flash.hint')} icon={<Ico name="bolt" />}>
             <Toggle label={t('settings.flash.label')} checked={s.flashOnChange} onChange={set('flashOnChange')} />
           </Row>
+          {native && (
+            <Row label={t('settings.bgAlerts')} hint={t('settings.bgAlerts.hint')} icon={<Ico name="bell" />}>
+              <Toggle label={t('settings.bgAlerts')} checked={s.backgroundAlerts} onChange={set('backgroundAlerts')} />
+            </Row>
+          )}
           <Row label={t('settings.awake')} hint={t('settings.awake.hint')} icon={<Ico name="star" />}>
             <Toggle label={t('settings.awake')} checked={s.keepAwake} onChange={set('keepAwake')} />
           </Row>

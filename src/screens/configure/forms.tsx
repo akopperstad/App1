@@ -11,6 +11,7 @@ import type {
 } from '../../engine/types';
 import { mmss } from '../../lib/format';
 import { CHIPS_REST, CHIPS_WORK, DurationField, Icon, Row, Section, Stepper, Toggle } from '../../components/ui';
+import { useT } from '../../i18n';
 import { MovementList } from './MovementList';
 import { StepList } from './StepList';
 
@@ -61,20 +62,21 @@ function InlineChips({
 }
 
 function AmrapForm({ config: c, onChange }: FormProps<AmrapConfig>) {
+  const { t } = useT();
   return (
-    <Section title="Workout">
-      <Row label="Duration" hint={c.sets > 1 ? 'Per AMRAP block' : 'Rounds as many as you can'}>
-        <DurationField label="AMRAP duration" value={c.durationSec} min={10} chips={CHIPS_AMRAP} onChange={(v) => onChange({ ...c, durationSec: v })} />
+    <Section title={t('f.workout')}>
+      <Row label={t('f.duration')} hint={c.sets > 1 ? t('f.perBlock') : t('f.amrapHint')}>
+        <DurationField label={t('f.amrapDuration')} value={c.durationSec} min={10} chips={CHIPS_AMRAP} onChange={(v) => onChange({ ...c, durationSec: v })} />
       </Row>
-      <Row label="Sets" hint="Back-to-back AMRAP blocks">
-        <Stepper label="Sets" value={c.sets} min={1} max={20} onChange={(v) => onChange({ ...c, sets: v })} />
+      <Row label={t('f.sets')} hint={t('f.setsHint')}>
+        <Stepper label={t('f.sets')} value={c.sets} min={1} max={20} onChange={(v) => onChange({ ...c, sets: v })} />
       </Row>
       {c.sets > 1 && (
-        <Row label="Rest between sets">
+        <Row label={t('f.restBetweenSets')}>
           <DurationField
-            label="Rest between sets"
+            label={t('f.restBetweenSets')}
             value={c.restBetweenSetsSec}
-            zeroLabel="None"
+            zeroLabel={t('f.none')}
             chips={CHIPS_REST}
             onChange={(v) => onChange({ ...c, restBetweenSetsSec: v })}
           />
@@ -85,12 +87,13 @@ function AmrapForm({ config: c, onChange }: FormProps<AmrapConfig>) {
 }
 
 function EmomForm({ config: c, onChange }: FormProps<EmomConfig>) {
+  const { t } = useT();
   return (
     <>
-      <Section title="Workout">
-        <Row label="Every" hint="Length of each interval">
+      <Section title={t('f.workout')}>
+        <Row label={t('f.every')} hint={t('f.everyHint')}>
           <DurationField
-            label="Interval length"
+            label={t('f.intervalLength')}
             value={c.intervalSec}
             min={10}
             max={1200}
@@ -100,13 +103,13 @@ function EmomForm({ config: c, onChange }: FormProps<EmomConfig>) {
           />
         </Row>
         <div className="cfg-chip-row">
-          <InlineChips label="Interval presets" values={CHIPS_EMOM} labels={EMOM_LABELS} value={c.intervalSec} onPick={(v) => onChange({ ...c, intervalSec: v })} />
+          <InlineChips label={t('f.intervalPresets')} values={CHIPS_EMOM} labels={EMOM_LABELS} value={c.intervalSec} onPick={(v) => onChange({ ...c, intervalSec: v })} />
         </div>
-        <Row label="Rounds">
-          <Stepper label="Rounds" value={c.rounds} min={1} max={120} onChange={(v) => onChange({ ...c, rounds: v })} />
+        <Row label={t('f.rounds')}>
+          <Stepper label={t('f.rounds')} value={c.rounds} min={1} max={120} onChange={(v) => onChange({ ...c, rounds: v })} />
         </Row>
       </Section>
-      <Section title="Movements">
+      <Section title={t('f.movements')}>
         <MovementList unit="interval" value={c.movements} onChange={(movements) => onChange({ ...c, movements })} />
       </Section>
     </>
@@ -114,62 +117,64 @@ function EmomForm({ config: c, onChange }: FormProps<EmomConfig>) {
 }
 
 function IntervalForm({ config: c, onChange }: FormProps<IntervalConfig>) {
+  const { t } = useT();
   return (
     <>
-      <Section title="Intervals">
-        <Row label="Work">
-          <DurationField label="Work" value={c.workSec} min={1} chips={CHIPS_WORK} onChange={(v) => onChange({ ...c, workSec: v })} />
+      <Section title={t('f.intervals')}>
+        <Row label={t('seg.work')}>
+          <DurationField label={t('seg.work')} value={c.workSec} min={1} chips={CHIPS_WORK} onChange={(v) => onChange({ ...c, workSec: v })} />
         </Row>
-        <Row label="Rest">
-          <DurationField label="Rest" value={c.restSec} zeroLabel="None" chips={CHIPS_REST} onChange={(v) => onChange({ ...c, restSec: v })} />
+        <Row label={t('seg.rest')}>
+          <DurationField label={t('seg.rest')} value={c.restSec} zeroLabel={t('f.none')} chips={CHIPS_REST} onChange={(v) => onChange({ ...c, restSec: v })} />
         </Row>
-        <Row label="Rounds">
-          <Stepper label="Rounds" value={c.rounds} min={1} max={99} onChange={(v) => onChange({ ...c, rounds: v })} />
+        <Row label={t('f.rounds')}>
+          <Stepper label={t('f.rounds')} value={c.rounds} min={1} max={99} onChange={(v) => onChange({ ...c, rounds: v })} />
         </Row>
       </Section>
-      <Section title="Sets">
-        <Row label="Sets" hint="Repeat the whole block">
-          <Stepper label="Sets" value={c.sets} min={1} max={20} onChange={(v) => onChange({ ...c, sets: v })} />
+      <Section title={t('f.sets')}>
+        <Row label={t('f.sets')} hint={t('f.repeatBlock')}>
+          <Stepper label={t('f.sets')} value={c.sets} min={1} max={20} onChange={(v) => onChange({ ...c, sets: v })} />
         </Row>
         {c.sets > 1 && (
-          <Row label="Rest between sets">
+          <Row label={t('f.restBetweenSets')}>
             <DurationField
-              label="Rest between sets"
+              label={t('f.restBetweenSets')}
               value={c.restBetweenSetsSec}
-              zeroLabel="None"
+              zeroLabel={t('f.none')}
               chips={CHIPS_REST}
               onChange={(v) => onChange({ ...c, restBetweenSetsSec: v })}
             />
           </Row>
         )}
       </Section>
-      <Section title="Movements">
-        <MovementList unit="work round" allowRest={false} value={c.movements} onChange={(movements) => onChange({ ...c, movements })} />
+      <Section title={t('f.movements')}>
+        <MovementList unit="round" allowRest={false} value={c.movements} onChange={(movements) => onChange({ ...c, movements })} />
       </Section>
     </>
   );
 }
 
 function ForTimeForm({ config: c, onChange }: FormProps<ForTimeConfig>) {
+  const { t } = useT();
   const lastCap = useRef(c.capSec || 20 * 60);
   if (c.capSec > 0) lastCap.current = c.capSec;
   return (
-    <Section title="Workout" footer="The clock counts up. Tap Finish when you're done — or let the cap end it.">
-      <Row label="Time cap" hint={c.capSec > 0 ? 'Workout ends at the cap' : 'No cap — runs until you finish'}>
-        <Toggle label="Time cap" checked={c.capSec > 0} onChange={(on) => onChange({ ...c, capSec: on ? lastCap.current : 0 })} />
+    <Section title={t('f.workout')} footer={t('f.forTimeFooter')}>
+      <Row label={t('f.timeCap')} hint={c.capSec > 0 ? t('f.capOn') : t('f.capOff')}>
+        <Toggle label={t('f.timeCap')} checked={c.capSec > 0} onChange={(on) => onChange({ ...c, capSec: on ? lastCap.current : 0 })} />
       </Row>
       {c.capSec > 0 && (
-        <Row label="Cap">
-          <DurationField label="Time cap" value={c.capSec} min={30} chips={CHIPS_CAP} onChange={(v) => onChange({ ...c, capSec: v })} />
+        <Row label={t('f.cap')}>
+          <DurationField label={t('f.timeCap')} value={c.capSec} min={30} chips={CHIPS_CAP} onChange={(v) => onChange({ ...c, capSec: v })} />
         </Row>
       )}
-      <Row label="Target rounds" hint="Optional — for the round counter">
+      <Row label={t('f.targetRounds')} hint={t('f.targetHint')}>
         <Stepper
-          label="Target rounds"
+          label={t('f.targetRounds')}
           value={c.targetRounds}
           min={0}
           max={100}
-          format={(v) => (v === 0 ? 'Off' : String(v))}
+          format={(v) => (v === 0 ? t('common.off') : String(v))}
           onChange={(v) => onChange({ ...c, targetRounds: v })}
         />
       </Row>
@@ -178,25 +183,27 @@ function ForTimeForm({ config: c, onChange }: FormProps<ForTimeConfig>) {
 }
 
 function CountdownForm({ config: c, onChange }: FormProps<CountdownConfig>) {
+  const { t } = useT();
   return (
-    <Section title="Timer">
-      <Row label="Duration">
-        <DurationField label="Duration" value={c.durationSec} min={1} chips={CHIPS_COUNTDOWN} onChange={(v) => onChange({ ...c, durationSec: v })} />
+    <Section title={t('f.timer')}>
+      <Row label={t('f.duration')}>
+        <DurationField label={t('f.duration')} value={c.durationSec} min={1} chips={CHIPS_COUNTDOWN} onChange={(v) => onChange({ ...c, durationSec: v })} />
       </Row>
       <div className="cfg-chip-row">
-        <InlineChips label="Duration presets" values={[30, 60, 120, 180, 300, 600]} value={c.durationSec} onPick={(v) => onChange({ ...c, durationSec: v })} />
+        <InlineChips label={t('f.durationPresets')} values={[30, 60, 120, 180, 300, 600]} value={c.durationSec} onPick={(v) => onChange({ ...c, durationSec: v })} />
       </div>
     </Section>
   );
 }
 
 function StopwatchInfo() {
+  const { t } = useT();
   return (
-    <Section title="How it works">
+    <Section title={t('f.how')}>
       <div className="cfg-info">
-        <InfoLine icon="play" text="Counts up from zero with no limit." />
-        <InfoLine icon="flag" text="Tap Lap to record splits — each lap and its split time are saved to History." />
-        <InfoLine icon="pause" text="Pause and resume any time. Tap Finish to stop." />
+        <InfoLine icon="play" text={t('f.sw1')} />
+        <InfoLine icon="flag" text={t('f.sw2')} />
+        <InfoLine icon="pause" text={t('f.sw3')} />
       </div>
     </Section>
   );
@@ -214,45 +221,46 @@ function InfoLine({ icon, text }: { icon: 'play' | 'flag' | 'pause' | 'bolt'; te
 }
 
 function DeathByForm({ config: c, onChange }: FormProps<DeathByConfig>) {
+  const { t } = useT();
   const repsAt = (r: number) => c.startReps + (r - 1) * c.increment;
   return (
     <>
-      <Section title="Workout">
-        <Row label="Movement" hint="Reps grow every interval until you can't keep up" htmlFor="deathby-move" stacked>
+      <Section title={t('f.workout')}>
+        <Row label={t('f.movement')} hint={t('f.movementHint')} htmlFor="deathby-move" stacked>
           <input
             id="deathby-move"
             className="ui-input"
             value={c.movement}
-            placeholder="e.g. Burpees"
+            placeholder={t('f.movementPlaceholder')}
             maxLength={40}
             onChange={(e) => onChange({ ...c, movement: e.target.value })}
           />
         </Row>
       </Section>
-      <Section title="Progression">
-        <Row label="Every">
-          <DurationField label="Interval" value={c.intervalSec} min={10} max={600} chips={[30, 45, 60, 90, 120, 180]} onChange={(v) => onChange({ ...c, intervalSec: v })} />
+      <Section title={t('f.progression')}>
+        <Row label={t('f.every')}>
+          <DurationField label={t('f.interval')} value={c.intervalSec} min={10} max={600} chips={[30, 45, 60, 90, 120, 180]} onChange={(v) => onChange({ ...c, intervalSec: v })} />
         </Row>
-        <Row label="Start reps">
-          <Stepper label="Start reps" value={c.startReps} min={1} max={100} onChange={(v) => onChange({ ...c, startReps: v })} />
+        <Row label={t('f.startReps')}>
+          <Stepper label={t('f.startReps')} value={c.startReps} min={1} max={100} onChange={(v) => onChange({ ...c, startReps: v })} />
         </Row>
-        <Row label="Add each round">
-          <Stepper label="Reps added each round" value={c.increment} min={1} max={20} onChange={(v) => onChange({ ...c, increment: v })} />
+        <Row label={t('f.addEach')}>
+          <Stepper label={t('f.addEachAria')} value={c.increment} min={1} max={20} onChange={(v) => onChange({ ...c, increment: v })} />
         </Row>
-        <Row label="Max rounds" hint="Stops here if you haven't failed">
-          <Stepper label="Max rounds" value={c.maxRounds} min={1} max={100} onChange={(v) => onChange({ ...c, maxRounds: v })} />
+        <Row label={t('f.maxRounds')} hint={t('f.maxHint')}>
+          <Stepper label={t('f.maxRounds')} value={c.maxRounds} min={1} max={100} onChange={(v) => onChange({ ...c, maxRounds: v })} />
         </Row>
       </Section>
-      <div className="cfg-ladder" aria-label="Rep ladder preview">
+      <div className="cfg-ladder" aria-label={t('f.ladder')}>
         {[1, 2, 3, 5, 10].filter((r) => r <= c.maxRounds).map((r) => (
           <div key={r} className="cfg-ladder__step">
-            <span className="cfg-ladder__r">R{r}</span>
+            <span className="cfg-ladder__r">{t('f.roundShort', { n: r })}</span>
             <span className="cfg-ladder__n num">{repsAt(r)}</span>
           </div>
         ))}
         {c.maxRounds > 10 && (
           <div className="cfg-ladder__step is-max">
-            <span className="cfg-ladder__r">R{c.maxRounds}</span>
+            <span className="cfg-ladder__r">{t('f.roundShort', { n: c.maxRounds })}</span>
             <span className="cfg-ladder__n num">{repsAt(c.maxRounds)}</span>
           </div>
         )}
@@ -262,21 +270,22 @@ function DeathByForm({ config: c, onChange }: FormProps<DeathByConfig>) {
 }
 
 function CustomForm({ config: c, onChange }: FormProps<CustomConfig>) {
+  const { t } = useT();
   return (
     <>
-      <Section title={`Steps · ${c.steps.length}`} plain>
+      <Section title={t('f.steps', { n: c.steps.length })} plain>
         <StepList steps={c.steps} onChange={(steps) => onChange({ ...c, steps })} />
       </Section>
-      <Section title="Repeat">
-        <Row label="Rounds" hint="Run the whole sequence">
-          <Stepper label="Rounds" value={c.rounds} min={1} max={50} onChange={(v) => onChange({ ...c, rounds: v })} />
+      <Section title={t('f.repeat')}>
+        <Row label={t('f.rounds')} hint={t('f.repeatHint')}>
+          <Stepper label={t('f.rounds')} value={c.rounds} min={1} max={50} onChange={(v) => onChange({ ...c, rounds: v })} />
         </Row>
         {c.rounds > 1 && (
-          <Row label="Rest between rounds">
+          <Row label={t('f.restBetweenRounds')}>
             <DurationField
-              label="Rest between rounds"
+              label={t('f.restBetweenRounds')}
               value={c.restBetweenRoundsSec}
-              zeroLabel="None"
+              zeroLabel={t('f.none')}
               chips={CHIPS_REST}
               onChange={(v) => onChange({ ...c, restBetweenRoundsSec: v })}
             />

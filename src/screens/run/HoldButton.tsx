@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState, type ReactNode } from 'react';
+import { useT } from '../../i18n';
 
 const HOLD_MS = 900;
 
@@ -25,6 +26,7 @@ export function HoldButton({
   onConfirm: () => void;
   onRequestConfirm: () => void;
 }) {
+  const { t } = useT();
   const [holding, setHolding] = useState(false);
   const timer = useRef(0);
   const fired = useRef(false);
@@ -41,7 +43,7 @@ export function HoldButton({
     <button
       type="button"
       className={`${className}${holding ? ' is-holding' : ''}`}
-      aria-label={requireHold ? `${label} (hold to confirm)` : label}
+      aria-label={requireHold ? t('ui.holdConfirm', { label }) : label}
       disabled={disabled}
       style={{ ['--hold-ms' as string]: `${HOLD_MS}ms` }}
       onPointerDown={(e) => {
