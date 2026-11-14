@@ -127,9 +127,38 @@ export type WorkoutConfig =
 
 export type SegmentKind = 'prep' | 'work' | 'rest';
 
+/**
+ * What a segment *is*, independent of the (translated) label text — so speech,
+ * notifications and the run screen never have to parse labels.
+ *  - prep: get-ready lead-in
+ *  - amrap / emom / work (interval & Tabata work) / fortime / countdown /
+ *    stopwatch / deathby: built-in work segments
+ *  - rest (between intervals, EMOM rest minute, custom "Rest" step),
+ *    setRest / roundRest / amrapRest: rests whose `detail` says what's next
+ *  - step: custom step with the user's own label
+ *  - open: fallback open-ended segment for an empty plan
+ */
+export type SegmentType =
+  | 'prep'
+  | 'amrap'
+  | 'amrapRest'
+  | 'emom'
+  | 'work'
+  | 'rest'
+  | 'setRest'
+  | 'roundRest'
+  | 'fortime'
+  | 'countdown'
+  | 'stopwatch'
+  | 'deathby'
+  | 'step'
+  | 'open';
+
 export interface Segment {
   kind: SegmentKind;
-  /** Big label, e.g. "WORK", "REST", "GET READY", "AMRAP". */
+  /** Set by compile(); optional so hand-built / stored segments stay valid. */
+  type?: SegmentType;
+  /** Big label in the workout's language, e.g. "Work", "Pause", "Get ready", "AMRAP". */
   label: string;
   /** Secondary text, e.g. movement name or "20 reps". */
   detail?: string;

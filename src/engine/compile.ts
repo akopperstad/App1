@@ -1,3 +1,4 @@
+import { EN, isRestWord, type Translator } from '../i18n/core';
 import type { Segment, WorkoutConfig } from './types';
 
 const S = 1000;
@@ -25,11 +26,16 @@ function rotate(list: string[] | undefined, i: number): string | undefined {
 /**
  * Compile a workout configuration into a flat list of segments.
  * @param prepSec length of the "get ready" lead-in (0 to disable).
+ * @param tr      translator for built-in labels / details (default English).
+ *                The language is fixed for the whole workout, so callers pass
+ *                the user's translator once when the run starts. Every segment
+ *                also carries a language-independent `type`.
  */
-export function compile(config: WorkoutConfig, prepSec: number): Segment[] {
+export function compile(config: WorkoutConfig, prepSec: number, tr: Translator = EN): Segment[] {
+  const { t } = tr;
   const out: Segment[] = [];
   if (ms(prepSec) > 0) {
-    out.push({ kind: 'prep', label: 'Get ready', durationMs: ms(prepSec), direction: 'down' });
+    out.push({ kind: 'prep', type: 'prep', label: t('seg.getReady'), durationMs: ms(prepSec), direction: 'down' });
   }
 
   switch (config.mode) {
@@ -38,6 +44,7 @@ export function compile(config: WorkoutConfig, prepSec: number): Segment[] {
       for (let s = 1; s <= sets; s++) {
         out.push({
           kind: 'work',
+          type: 'amrap',
           label: 'AMRAP',
           durationMs: ms(config.durationSec),
           direction: 'down',
@@ -47,8 +54,9 @@ export function compile(config: WorkoutConfig, prepSec: number): Segment[] {
         if (s < sets && ms(config.restBetweenSetsSec) > 0) {
           out.push({
             kind: 'rest',
-            label: 'Rest',
-            detail: `Next: AMRAP ${s + 1} of ${sets}`,
+            type: 'amrapRest',
+            label: t('seg.rest'),
+            detail: t('seg.nextAmrap', { n: s + 1, total: sets }),
             durationMs: ms(config.restBetweenSetsSec),
             direction: 'down',
             set: s,
@@ -63,10 +71,11 @@ export function compile(config: WorkoutConfig, prepSec: number): Segment[] {
       const rounds = count(config.rounds);
       for (let r = 1; r <= rounds; r++) {
         const movement = rotate(config.movements, r - 1);
-        const isRest = movement?.toLowerCase() === 'rest';
+        const isRest = isRestWord(movement);
         out.push({
           kind: isRest ? 'rest' : 'work',
-          label: isRest ? 'Rest' : config.intervalSec === 60 ? 'EMOM' : `E${formatEvery(config.intervalSec)}`,
+          type: isRest ? 'rest' : 'emom',
+          label: isRest ? t('seg.rest') : config.intervalSec === 60 ? 'EMOM' : `E${formatEvery(config.intervalSec)}`,
           detail: isRest ? undefined : movement,
           durationMs: ms(config.intervalSec),
           direction: 'down',
@@ -86,7 +95,8 @@ export function compile(config: WorkoutConfig, prepSec: number): Segment[] {
         for (let r = 1; r <= rounds; r++) {
           out.push({
             kind: 'work',
-            label: 'Work',
+            type: 'work',
+            label: t('seg.work'),
             detail: rotate(config.movements, workIdx++),
             durationMs: ms(config.workSec),
             direction: 'down',
@@ -102,8 +112,9 @@ export function compile(config: WorkoutConfig, prepSec: number): Segment[] {
             if (ms(config.restBetweenSetsSec) > 0) {
               out.push({
                 kind: 'rest',
-                label: 'Set rest',
-                detail: `Next: set ${s + 1} of ${sets}`,
+                type: 'setRest',
+                label: t('seg.setRest'),
+                detail: t('seg.nextSet', { n: s + 1, total: sets }),
                 durationMs: ms(config.restBetweenSetsSec),
                 direction: 'down',
                 round: r,
@@ -112,10 +123,10 @@ export function compile(config: WorkoutConfig, prepSec: number): Segment[] {
                 totalSets: sets,
               });
             } else if (ms(config.restSec) > 0) {
-              out.push(restSeg(ms(config.restSec), r, rounds, s, sets));
+              out.push(restSeg(t('seg.rest'), ms(config.restSec), r, rounds, s, sets));
             }
           } else if (ms(config.restSec) > 0) {
-            out.push(restSeg(ms(config.restSec), r, rounds, s, sets));
+            out.push(restSeg(t('seg.rest'), ms(config.restSec), r, rounds, s, sets));
           }
         }
       }
@@ -125,8 +136,9 @@ export function compile(config: WorkoutConfig, prepSec: number): Segment[] {
     case 'fortime': {
       out.push({
         kind: 'work',
-        label: 'For time',
-        detail: ms(config.capSec) > 0 ? `Cap ${formatClock(config.capSec)}` : undefined,
+        type: 'fortime',
+        label: t('seg.forTime'),
+        detail: ms(config.capSec) > 0 ? t('seg.cap', { time: formatClock(config.capSec) }) : undefined,
         durationMs: ms(config.capSec) > 0 ? ms(config.capSec) : null,
         direction: 'up',
       });
@@ -136,7 +148,8 @@ export function compile(config: WorkoutConfig, prepSec: number): Segment[] {
     case 'countdown': {
       out.push({
         kind: 'work',
-        label: 'Countdown',
+        type: 'countdown',
+        label: t('seg.countdown'),
         durationMs: ms(config.durationSec),
         direction: 'down',
       });
@@ -144,7 +157,7 @@ export function compile(config: WorkoutConfig, prepSec: number): Segment[] {
     }
 
     case 'stopwatch': {
-      out.push({ kind: 'work', label: 'Stopwatch', durationMs: null, direction: 'up' });
+      out.push({ kind: 'work', type: 'stopwatch', label: t('seg.stopwatch'), durationMs: null, direction: 'up' });
       break;
     }
 
@@ -154,8 +167,9 @@ export function compile(config: WorkoutConfig, prepSec: number): Segment[] {
         const reps = (Number(config.startReps) || 0) + (r - 1) * (Number(config.increment) || 0);
         out.push({
           kind: 'work',
-          label: 'Death by',
-          detail: `${reps} ${(typeof config.movement === 'string' && config.movement) || 'reps'}`.trim(),
+          type: 'deathby',
+          label: t('seg.deathBy'),
+          detail: `${reps} ${(typeof config.movement === 'string' && config.movement.trim()) || t('seg.reps')}`.trim(),
           durationMs: ms(config.intervalSec),
           direction: 'down',
           round: r,
@@ -177,9 +191,13 @@ export function compile(config: WorkoutConfig, prepSec: number): Segment[] {
         steps.forEach((st) => {
           const timed = ms(st.durationSec) > 0;
           const kind = st.kind === 'rest' ? 'rest' : 'work';
+          const own = typeof st.label === 'string' ? st.label.trim() : '';
+          // A rest step named just "Rest" (in any language) shows as the built-in, translated rest.
+          const plainRest = kind === 'rest' && (!own || isRestWord(own));
           out.push({
             kind,
-            label: (typeof st.label === 'string' ? st.label.trim() : '') || (kind === 'rest' ? 'Rest' : 'Work'),
+            type: plainRest ? 'rest' : 'step',
+            label: plainRest ? t('seg.rest') : own || t('seg.work'),
             durationMs: timed ? ms(st.durationSec) : null,
             direction: timed ? 'down' : 'up',
             round: r,
@@ -189,8 +207,9 @@ export function compile(config: WorkoutConfig, prepSec: number): Segment[] {
         if (r < rounds && ms(config.restBetweenRoundsSec) > 0) {
           out.push({
             kind: 'rest',
-            label: 'Round rest',
-            detail: `Next: round ${r + 1} of ${rounds}`,
+            type: 'roundRest',
+            label: t('seg.roundRest'),
+            detail: t('seg.nextRound', { n: r + 1, total: rounds }),
             durationMs: ms(config.restBetweenRoundsSec),
             direction: 'down',
             round: r,
@@ -204,15 +223,16 @@ export function compile(config: WorkoutConfig, prepSec: number): Segment[] {
 
   // Guarantee at least one non-prep segment so the engine always has work to do.
   if (!out.some((s) => s.kind !== 'prep')) {
-    out.push({ kind: 'work', label: 'Work', durationMs: null, direction: 'up' });
+    out.push({ kind: 'work', type: 'open', label: t('seg.work'), durationMs: null, direction: 'up' });
   }
   return out;
 }
 
-function restSeg(durationMs: number, r: number, rounds: number, s: number, sets: number): Segment {
+function restSeg(label: string, durationMs: number, r: number, rounds: number, s: number, sets: number): Segment {
   return {
     kind: 'rest',
-    label: 'Rest',
+    type: 'rest',
+    label,
     durationMs,
     direction: 'down',
     round: r,
