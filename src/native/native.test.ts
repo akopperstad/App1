@@ -17,7 +17,7 @@ import {
   prepareBackgroundCues,
   toNotifications,
 } from './background';
-import { installBackButton } from './app';
+import { installBackButton, onDeepLink } from './app';
 import { planAlerts } from './schedule';
 import { useBackgroundCues } from './useBackgroundCues';
 
@@ -62,6 +62,7 @@ vi.mock('@capacitor/local-notifications', () => ({ LocalNotifications: ln }));
 const app = vi.hoisted(() => ({
   listeners: new Map<string, (arg?: unknown) => void>(),
   minimizeApp: vi.fn(async () => {}),
+  getLaunchUrl: vi.fn(async () => ({ url: 'https://pulse.example/#w=launch' })),
   addListener: vi.fn(async (ev: string, fn: (arg?: unknown) => void) => {
     app.listeners.set(ev, fn);
     return { remove: async () => void app.listeners.delete(ev) };
@@ -137,7 +138,11 @@ describe('native app', () => {
     primeSpeech();
     expect(tts.speak).not.toHaveBeenCalled();
     say('Round 2 of 8', 0.5);
-    expect(tts.speak).toHaveBeenCalledWith(expect.objectContaining({ text: 'Round 2 of 8', volume: 0.5, queueStrategy: 0 }));
+    expect(tts.speak).toHaveBeenCalledWith(
+      expect.objectContaining({ text: 'Round 2 of 8', volume: 0.5, lang: 'en-US', queueStrategy: 0 }),
+    );
+    say('Pause', 1, 'nb-NO');
+    expect(tts.speak).toHaveBeenLastCalledWith(expect.objectContaining({ text: 'Pause', lang: 'nb-NO' }));
     stopSpeech();
     expect(tts.stop).toHaveBeenCalled();
   });
@@ -170,6 +175,30 @@ describe('native app', () => {
     expect(app.minimizeApp).toHaveBeenCalledTimes(1);
     expect(back).toHaveBeenCalledTimes(1);
     back.mockRestore();
+  });
+});
+
+describe('native deep links', () => {
+  it('opens the launch URL once and later appUrlOpen events', async () => {
+    goNative('android');
+    const open = vi.fn(() => true);
+    const off = onDeepLink(open);
+    const off2 = onDeepLink(open); // StrictMode double effect: launch URL still opened once
+    await flush();
+    expect(open).toHaveBeenCalledTimes(1);
+    expect(open).toHaveBeenCalledWith('https://pulse.example/#w=launch');
+    app.listeners.get('appUrlOpen')!({ url: 'https://pulse.example/#w=other' });
+    expect(open).toHaveBeenLastCalledWith('https://pulse.example/#w=other');
+    off();
+    off2();
+  });
+
+  it('is inert on the web', async () => {
+    const open = vi.fn(() => true);
+    onDeepLink(open);
+    await flush();
+    expect(open).not.toHaveBeenCalled();
+    expect(app.getLaunchUrl).not.toHaveBeenCalled();
   });
 });
 

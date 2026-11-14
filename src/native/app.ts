@@ -67,3 +67,28 @@ export function installBackButton(): Unsub {
     }),
   );
 }
+
+/**
+ * Native deep links (custom scheme, Universal Links / App Links): hand the URL
+ * to `open` — both for a cold start (getLaunchUrl) and while running (appUrlOpen).
+ * `open` returns false for URLs that are not Pulse share links.
+ */
+/** Last URL opened (module-level: StrictMode re-runs effects; launch + appUrlOpen may both report it). */
+let lastDeepLink = '';
+
+export function onDeepLink(open: (url: string) => boolean): Unsub {
+  if (!isNative()) return () => {};
+  const handle = (url: string | undefined) => {
+    if (!url || url === lastDeepLink) return;
+    lastDeepLink = url;
+    try {
+      open(url);
+    } catch {
+      /* ignore */
+    }
+  };
+  App.getLaunchUrl()
+    .then((r) => handle(r?.url))
+    .catch(() => {});
+  return listen(() => App.addListener('appUrlOpen', (e) => handle(e.url)));
+}

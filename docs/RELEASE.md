@@ -16,6 +16,19 @@ npm run ios:open        # sync, then open the Xcode project (Mac only)
 
 Run `npm run cap:sync` after **every** web change before building natively.
 
+### Share links in native builds — `VITE_SHARE_ORIGIN`
+
+Inside the apps the page origin is `capacitor://localhost` (iOS) /
+`https://localhost` (Android), so "Share workout" links need the **public URL of
+the hosted PWA**. Set it at build time, e.g. in `.env.production`:
+
+```bash
+VITE_SHARE_ORIGIN=https://pulse.example.com/
+```
+
+Without it, links created in the apps point at `localhost` and won't open for
+anyone else. The PWA build doesn't need it (it uses its own address).
+
 ---
 
 ## 0. One-time decisions
@@ -198,9 +211,43 @@ native functionality up front.
 
 ---
 
-## 3. Pre-release checklist
+## 3. Optional: open share links directly in the app (Universal Links / App Links)
+
+The apps already handle incoming links: `appUrlOpen` and the launch URL are
+passed to `openShared()` (src/native/useDeepLinks.ts), which imports any URL
+containing `#w=…` and ignores everything else. To make `https://pulse.example.com/#w=…`
+links open the installed app instead of the browser:
+
+**Android App Links**
+1. Add to the `MainActivity` `<activity>` in `android/app/src/main/AndroidManifest.xml`:
+   ```xml
+   <intent-filter android:autoVerify="true">
+       <action android:name="android.intent.action.VIEW" />
+       <category android:name="android.intent.category.DEFAULT" />
+       <category android:name="android.intent.category.BROWSABLE" />
+       <data android:scheme="https" android:host="pulse.example.com" />
+   </intent-filter>
+   ```
+2. Host `https://pulse.example.com/.well-known/assetlinks.json` with your package
+   name and the **Play App Signing** SHA-256 fingerprint (Play Console → Setup →
+   App signing; it shows a ready-made assetlinks.json).
+
+**iOS Universal Links**
+1. Xcode → target App → Signing & Capabilities → **+ Associated Domains** →
+   `applinks:pulse.example.com` (this adds an entitlements file).
+2. Host `https://pulse.example.com/.well-known/apple-app-site-association`
+   (JSON, no extension, `application/json`):
+   ```json
+   { "applinks": { "details": [ { "appIDs": ["TEAMID.com.yourstudio.pulse"], "components": [ { "/": "/*" } ] } ] } }
+   ```
+
+Note: the `#w=` fragment is never sent to the server, so any path works; the
+app receives the full URL. Skip this section and links simply open the PWA.
+
+## 4. Pre-release checklist
 
 - [ ] App id changed everywhere (section 0) and `npm run cap:sync` run.
+- [ ] `VITE_SHARE_ORIGIN` set to the public PWA URL for native builds.
 - [ ] Version / versionCode / build number bumped.
 - [ ] `npx tsc -p . && npx vitest run && npm run build` pass.
 - [ ] On a real iPhone and Android phone:

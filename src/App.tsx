@@ -8,6 +8,7 @@ import { History } from './screens/History';
 import { SettingsScreen } from './screens/Settings';
 import { Onboarding } from './screens/Onboarding';
 import { useShareLinks, withLaunchImport } from './features/shareActions';
+import { useNativeDeepLinks } from './native/useDeepLinks';
 import { Toaster } from './features/toast';
 import { useDocumentLang } from './i18n';
 
@@ -80,6 +81,7 @@ export function App() {
   useTheme();
   useDocumentLang();
   useShareLinks(go);
+  useNativeDeepLinks(go); // native app: appUrlOpen / launch URL → openShared
   const { onboarded } = useSettings();
 
   return (
