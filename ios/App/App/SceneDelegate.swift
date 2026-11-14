@@ -5,11 +5,15 @@ class SceneDelegate: UIResponder, UIWindowSceneDelegate {
     var window: UIWindow?
 
     func scene(_ scene: UIScene, willConnectTo session: UISceneSession, options connectionOptions: UIScene.ConnectionOptions) {
-        guard let windowScene = scene as? UIWindowScene else { return }
-
-        window = UIWindow(windowScene: windowScene)
-        window?.rootViewController = MainViewController()
-        window?.makeKeyAndVisible()
+        // Info.plist's UISceneStoryboardFile ("Main") already creates the window
+        // with a MainViewController before this is called. Only build one here
+        // as a fallback — creating a second would spin up a second web view and
+        // Capacitor bridge (plugins initialised twice).
+        if window == nil, let windowScene = scene as? UIWindowScene {
+            window = UIWindow(windowScene: windowScene)
+            window?.rootViewController = MainViewController()
+            window?.makeKeyAndVisible()
+        }
 
         SceneDelegateProxy.shared.scene(scene, willConnectTo: session, options: connectionOptions)
     }
