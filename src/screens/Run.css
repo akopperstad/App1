@@ -1656,6 +1656,13 @@
 }
 .pill {
   min-height: 52px;
+  white-space: nowrap;
+}
+.utility .pill {
+  flex: 1 1 0;
+  max-width: 240px;
+  justify-content: center;
+  padding: 0 var(--s-3);
 }
 .icon-btn:hover {
   background: transparent;

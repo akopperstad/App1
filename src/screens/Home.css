@@ -137,12 +137,11 @@
 .home__day.is-today .home__day-l {
   color: var(--fg);
 }
-@media (max-width: 370px) {
-  .home__week {
-    gap: var(--s-3);
-    padding-left: var(--s-3);
-    padding-right: var(--s-3);
-  }
+.home__week {
+  container: week / inline-size;
+}
+/* Narrow phones or large Dynamic Type: drop the minutes stat before anything collides. */
+@container week (max-width: 21.5em) {
   .home__week-stat:nth-child(2) {
     display: none;
   }
