@@ -1,0 +1,54 @@
+<!doctype html>
+<!-- Google Play feature graphic, 1024×500. Render: node store/graphics/render.cjs
+     Rules: no price/promo text ("free", "no ads", "#1"), key content away from the edges. -->
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<style>
+  html, body { margin: 0; }
+  body { width: 1024px; height: 500px; overflow: hidden; background: #050506; color: #f3f3ef;
+    font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; }
+  .bg { position: absolute; inset: 0;
+    background:
+      radial-gradient(520px 420px at 790px 250px, rgba(255, 91, 58, .30), transparent 70%),
+      radial-gradient(600px 300px at 0 520px, rgba(255, 91, 58, .10), transparent 70%),
+      #050506; }
+  .grid { position: absolute; inset: 0; opacity: .07;
+    background-image: linear-gradient(#fff 1px, transparent 1px), linear-gradient(90deg, #fff 1px, transparent 1px);
+    background-size: 40px 40px; mask-image: radial-gradient(500px 400px at 790px 250px, #000, transparent 75%); }
+  .left { position: absolute; left: 72px; top: 0; bottom: 0; width: 520px; display: flex; flex-direction: column; justify-content: center; }
+  .brand { display: flex; align-items: center; gap: 16px; margin-bottom: 26px; }
+  .brand img { width: 64px; height: 64px; border-radius: 15px; box-shadow: 0 0 0 1px rgba(255,255,255,.08); }
+  .brand b { font-size: 40px; font-weight: 800; letter-spacing: -0.02em; }
+  h1 { margin: 0; font-size: 56px; line-height: 1.02; font-weight: 800; letter-spacing: -0.035em; }
+  h1 em { font-style: normal; color: #ff5b3a; }
+  .chips { display: flex; gap: 10px; margin-top: 28px; }
+  .chips span { font-size: 16px; font-weight: 750; letter-spacing: .08em; padding: 9px 14px; border-radius: 999px;
+    background: rgba(255,255,255,.07); box-shadow: inset 0 0 0 1px rgba(255,255,255,.1); }
+  .dial { position: absolute; left: 610px; top: 60px; width: 360px; height: 360px; }
+  .dial svg { width: 100%; height: 100%; }
+  .t { position: absolute; inset: 0; display: grid; place-items: center; text-align: center; }
+  .t div { font: 800 112px/1 ui-rounded, -apple-system, "SF Pro Rounded", system-ui, sans-serif; letter-spacing: -0.05em; font-variant-numeric: tabular-nums; }
+  .t small { display: block; font-size: 20px; font-weight: 750; letter-spacing: .18em; color: #ff7a4d; margin-bottom: 4px; }
+  .t p { margin: 8px 0 0; font-size: 20px; font-weight: 500; letter-spacing: 0; color: #b9b9b2; }
+  .t small { letter-spacing: .18em; }
+  .t p b { color: #fff; }
+</style>
+</head>
+<body>
+<div class="bg"></div><div class="grid"></div>
+<div class="left">
+  <div class="brand"><img src="icon.svg" alt=""><b>Pulse</b></div>
+  <h1>Every timer your<br>training needs.<br><em>Loud and clear.</em></h1>
+  <div class="chips"><span>AMRAP</span><span>EMOM</span><span>TABATA</span><span>HIIT</span></div>
+</div>
+<div class="dial">
+  <svg viewBox="0 0 200 200">
+    <defs><linearGradient id="g" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#ff7a4d"/><stop offset="1" stop-color="#ff3d2e"/></linearGradient></defs>
+    <circle cx="100" cy="100" r="88" fill="none" stroke="#1c1f24" stroke-width="10"/>
+    <circle cx="100" cy="100" r="88" fill="none" stroke="url(#g)" stroke-width="10" stroke-linecap="round" stroke-dasharray="553" stroke-dashoffset="166" transform="rotate(-90 100 100)"/>
+  </svg>
+  <div class="t"><div><small>WORK</small>0:14<p>Round <b>3</b> of 8</p></div></div>
+</div>
+</body>
+</html>

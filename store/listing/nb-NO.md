@@ -22,7 +22,7 @@ Alle timerne treningen din trenger: AMRAP, EMOM, For Time, Tabata, intervaller o
 
 ### Keywords
 ```text
-trening,timer,intervaller,stoppeklokke,nedtelling,boksing,runder,styrke,kondisjon,gym,klokke,e2mom,pip
+trening,timer,intervaller,stoppeklokke,nedtelling,boksing,runder,styrke,kondisjon,gym,klokke,e2mom
 ```
 
 ### Description
@@ -45,7 +45,7 @@ ALLE FORMATENE DU TRENER
 SIGNALER DU IKKE GÅR GLIPP AV
 • 3-2-1-pip før hvert skifte, og egne lyder for start og pause
 • 5 lydstiler: Klassisk, Bokseklokke, Fløyte, Myk og Digital
-• Taleopplesning på norsk, engelsk, tysk, spansk og fransk: «Runde 3 av 8», «Halvveis», «10 sekunder»
+• Taleopplesning på norsk, engelsk, tysk, spansk og fransk: «Runde 3 av 8», «Halvveis», «Siste runde»
 • Vibrasjon og fargeblink over hele skjermen ved hvert intervallskifte
 • Lås telefonen og fortsett: Pulse varsler deg fortsatt ved hvert skifte mellom arbeid og pause
 • Spiller over musikken din i stedet for å stoppe den
@@ -108,7 +108,7 @@ ALLE FORMATENE DU TRENER
 SIGNALER DU IKKE GÅR GLIPP AV
 • 3-2-1-pip før hvert skifte, og egne lyder for start og pause
 • 5 lydstiler: Klassisk, Bokseklokke, Fløyte, Myk og Digital
-• Taleopplesning på norsk, engelsk, tysk, spansk og fransk: «Runde 3 av 8», «Halvveis», «10 sekunder»
+• Taleopplesning på norsk, engelsk, tysk, spansk og fransk: «Runde 3 av 8», «Halvveis», «Siste runde»
 • Vibrasjon og fargeblink over hele skjermen ved hvert intervallskifte
 • Lås telefonen og fortsett: Pulse varsler deg fortsatt, presist, ved hvert skifte mellom arbeid og pause
 • Spiller over musikken din i stedet for å stoppe den

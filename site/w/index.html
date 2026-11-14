@@ -1,0 +1,346 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Shared workout · Pulse</title>
+<meta name="description" content="Someone shared a workout with you. Open it in Pulse, the workout timer.">
+<meta name="robots" content="noindex">
+<meta name="theme-color" content="#f3f3ef" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#050506" media="(prefers-color-scheme: dark)">
+<!-- TODO: once the iOS app is live: <meta name="apple-itunes-app" content="app-id=XXXXXXXXXX"> (Smart App Banner) -->
+<link rel="icon" href="../icon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="../styles.css">
+<style>
+  .share { max-width: 560px; padding-top: 40px; }
+  .from { color: var(--ink-3); font-size: 15px; margin: 0 0 14px; display: flex; align-items: center; gap: 10px; }
+  .from img { width: 28px; height: 28px; border-radius: 7px; }
+  .wcard { background: var(--card); border-radius: 26px; box-shadow: inset 0 0 0 1px var(--line), var(--shadow); padding: 26px; position: relative; overflow: hidden; }
+  .wcard::before { content: ""; position: absolute; inset: 0 0 auto 0; height: 5px; background: linear-gradient(90deg, #ff7a4d, #ff3d2e); }
+  .chip { display: inline-block; font-size: 12px; font-weight: 750; letter-spacing: .1em; text-transform: uppercase; color: var(--coral-ink); background: color-mix(in srgb, var(--coral) 13%, transparent); padding: 5px 10px; border-radius: 999px; }
+  .wcard h1 { font-size: clamp(30px, 7vw, 42px); font-weight: 800; margin: 14px 0 4px; overflow-wrap: anywhere; }
+  .desc { color: var(--ink-2); font-size: 18px; margin: 0; }
+  .stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 10px; margin: 22px 0 0; }
+  .stat { background: var(--bg); border-radius: 14px; padding: 12px 14px; }
+  .stat dt { font-size: 12px; text-transform: uppercase; letter-spacing: .08em; color: var(--ink-3); font-weight: 650; }
+  .stat dd { margin: 2px 0 0; font-size: 22px; font-weight: 750; font-variant-numeric: tabular-nums; letter-spacing: -0.01em; }
+  .list { margin: 22px 0 0; padding: 0; list-style: none; border-top: 1px solid var(--line); }
+  .list li { display: flex; justify-content: space-between; gap: 16px; padding: 11px 0; border-bottom: 1px solid var(--line); font-size: 16px; }
+  .list li span:first-child { overflow-wrap: anywhere; }
+  .list li .n { color: var(--ink-3); font-variant-numeric: tabular-nums; min-width: 1.6em; display: inline-block; }
+  .list li .d { color: var(--ink-2); font-variant-numeric: tabular-nums; white-space: nowrap; }
+  .list li.rest .d, .list li.rest span:first-child { color: var(--ink-3); }
+  .list-title { margin: 22px 0 0; font-size: 13px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: var(--ink-3); }
+  .actions { display: grid; gap: 10px; margin-top: 22px; }
+  .actions .btn { width: 100%; }
+  .get { margin-top: 34px; }
+  .get h2 { font-size: 22px; margin-bottom: 6px; }
+  .get p { color: var(--ink-2); margin: 0 0 16px; }
+  .hint { font-size: 14px; color: var(--ink-3); margin: 14px 0 0; }
+  .flash { outline: 3px solid var(--coral); outline-offset: 6px; border-radius: 14px; transition: outline-color .6s; }
+  .err h1 { font-size: 32px; }
+  [hidden] { display: none !important; }
+</style>
+</head>
+<body>
+<header class="site-header">
+  <div class="wrap">
+    <a class="brand" href="../index.html"><img src="../icon.svg" alt="" width="32" height="32">Pulse</a>
+    <nav class="nav" aria-label="Main"><a href="../support.html">Support</a></nav>
+  </div>
+</header>
+
+<main class="wrap share">
+  <p class="from"><img src="../icon.svg" alt="">Someone shared a workout with you</p>
+
+  <article class="wcard" id="card" hidden>
+    <span class="chip" id="mode"></span>
+    <h1 id="name"></h1>
+    <p class="desc" id="desc"></p>
+    <dl class="stats" id="stats"></dl>
+    <p class="list-title" id="listTitle" hidden></p>
+    <ol class="list" id="list" hidden></ol>
+    <div class="actions">
+      <a class="btn" id="open" href="#">Open in Pulse</a>
+      <button class="btn ghost" id="copy" type="button">Copy link</button>
+    </div>
+    <p class="hint">Link didn't open the app? Copy it, then in Pulse go to <strong>Settings › Your data › Import a shared workout</strong>.</p>
+  </article>
+
+  <article class="wcard err" id="bad" hidden>
+    <span class="chip">Link problem</span>
+    <h1>This workout link isn't valid</h1>
+    <p class="desc">It may have been cut off when it was copied. Ask the sender to share it again, or open it straight from the message.</p>
+  </article>
+
+  <section class="get" id="get" aria-labelledby="getTitle">
+    <h2 id="getTitle">Get Pulse</h2>
+    <p>The workout timer for AMRAP, EMOM, Tabata, intervals and more. Loud beeps, voice cues and haptics. No account, no ads.</p>
+    <div class="badges" id="badges">
+      <!-- TODO: official badges + store URLs -->
+      <a class="badge" id="ios" href="#" aria-label="Download on the App Store (coming soon)">
+        <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><rect x="6" y="1.5" width="12" height="21" rx="3" fill="none" stroke="currentColor" stroke-width="2"/><rect x="10" y="18" width="4" height="1.6" rx=".8"/></svg>
+        <div><small>Download on the</small><span>App Store</span></div>
+      </a>
+      <a class="badge" id="android" href="#" aria-label="Get it on Google Play (coming soon)">
+        <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M5 2.8v18.4c0 .8.9 1.3 1.6.9l15.2-9.2c.7-.4.7-1.4 0-1.8L6.6 1.9C5.9 1.5 5 2 5 2.8z"/></svg>
+        <div><small>Get it on</small><span>Google Play</span></div>
+      </a>
+    </div>
+  </section>
+</main>
+
+<footer class="site-footer">
+  <div class="wrap">
+    <div>© 2026 Pulse</div>
+    <nav aria-label="Footer"><a href="../privacy.html">Privacy</a><a href="../terms.html">Terms</a></nav>
+  </div>
+</footer>
+
+<script>
+(function () {
+  'use strict';
+  // ---- configuration (TODO before launch) ---------------------------------
+  var STORE = { ios: '#', android: '#' }; // TODO: App Store / Play URLs
+  // Custom URL scheme the native app registers (TODO: not registered yet in
+  // ios/android). With Universal Links / App Links configured for this /w/
+  // path, the OS opens the app directly and this page is never shown.
+  var APP_SCHEME = 'pulse';
+
+  // ---- decoder: mirrors src/features/share.ts (format v1) + normalize.ts ---
+  var PREFIX = '1.', MAX_CODE = 12000, MAX_NAME = 80, MAX_LABEL = 60, MAX_ITEMS = 100, MAX = 7 * 24 * 3600;
+  var LONG = { n: 'name', d: 'durationSec', s: 'sets', b: 'restBetweenSetsSec', i: 'intervalSec', r: 'rounds', v: 'movements',
+    w: 'workSec', t: 'restSec', c: 'capSec', g: 'targetRounds', p: 'startReps', x: 'increment', m: 'maxRounds', o: 'movement',
+    q: 'steps', z: 'restBetweenRoundsSec' };
+  var CODE_MODES = { a: 'amrap', e: 'emom', t: 'tabata', i: 'interval', f: 'fortime', c: 'countdown', s: 'stopwatch', d: 'deathby', x: 'custom' };
+  var DEFAULTS = {
+    amrap: { durationSec: 720, sets: 1, restBetweenSetsSec: 60 },
+    emom: { intervalSec: 60, rounds: 10, movements: [] },
+    fortime: { capSec: 1200, targetRounds: 0 },
+    tabata: { workSec: 20, restSec: 10, rounds: 8, sets: 1, restBetweenSetsSec: 60, movements: [] },
+    interval: { workSec: 40, restSec: 20, rounds: 10, sets: 1, restBetweenSetsSec: 90, movements: [] },
+    deathby: { intervalSec: 60, startReps: 1, increment: 1, maxRounds: 30, movement: 'Burpees' },
+    custom: { rounds: 3, restBetweenRoundsSec: 0 },
+    countdown: { durationSec: 120 },
+    stopwatch: {}
+  };
+  var TITLES = { amrap: 'AMRAP', emom: 'EMOM', fortime: 'For Time', tabata: 'Tabata', interval: 'Intervals',
+    deathby: 'Death By', custom: 'Custom', countdown: 'Countdown', stopwatch: 'Stopwatch' };
+  var has = function (o, k) { return Object.prototype.hasOwnProperty.call(o, k); };
+  var isObj = function (v) { return typeof v === 'object' && v !== null && !Array.isArray(v); };
+
+  function fromBase64Url(b64) {
+    if (!/^[A-Za-z0-9_-]*$/.test(b64)) return null;
+    try {
+      var pad = b64.length % 4 === 0 ? '' : '===='.slice(b64.length % 4);
+      var bin = atob(b64.replace(/-/g, '+').replace(/_/g, '/') + pad);
+      var bytes = new Uint8Array(bin.length);
+      for (var i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
+      return new TextDecoder('utf-8', { fatal: true }).decode(bytes);
+    } catch (e) { return null; }
+  }
+
+  function decode(code) {
+    if (typeof code !== 'string') return null;
+    var c = code.trim();
+    if (c.indexOf(PREFIX) !== 0 || c.length > MAX_CODE) return null;
+    var json = fromBase64Url(c.slice(PREFIX.length));
+    if (json === null) return null;
+    var data;
+    try { data = JSON.parse(json); } catch (e) { return null; }
+    if (!isObj(data) || typeof data.k !== 'string' || !has(CODE_MODES, data.k)) return null;
+    var mode = CODE_MODES[data.k], def = DEFAULTS[mode];
+    var raw = { mode: mode };
+    Object.keys(LONG).forEach(function (s) { if (has(data, s)) raw[LONG[s]] = data[s]; });
+
+    if (typeof raw.name === 'string' && raw.name.trim()) raw.name = raw.name.trim().slice(0, MAX_NAME); else delete raw.name;
+    var num = function (key, min, int) {
+      var v = raw[key];
+      var n = typeof v === 'number' && isFinite(v) ? v : def[key];
+      if (int) n = Math.round(n);
+      raw[key] = Math.min(MAX, Math.max(min, n));
+    };
+    var strings = function (key) {
+      var v = raw[key];
+      raw[key] = Array.isArray(v) ? v.slice(0, MAX_ITEMS).filter(function (x) { return typeof x === 'string'; }).map(function (m) { return m.slice(0, MAX_LABEL); }) : [];
+    };
+    switch (mode) {
+      case 'amrap': num('durationSec', 1); num('sets', 1, true); num('restBetweenSetsSec', 0); break;
+      case 'emom': num('intervalSec', 1); num('rounds', 1, true); strings('movements'); break;
+      case 'tabata': case 'interval':
+        num('workSec', 1); num('restSec', 0); num('rounds', 1, true); num('sets', 1, true); num('restBetweenSetsSec', 0); strings('movements'); break;
+      case 'fortime': num('capSec', 0); num('targetRounds', 0, true); break;
+      case 'countdown': num('durationSec', 1); break;
+      case 'deathby':
+        num('intervalSec', 1); num('startReps', 0, true); num('increment', 0, true); num('maxRounds', 1, true);
+        raw.movement = typeof raw.movement === 'string' ? raw.movement.slice(0, MAX_LABEL) : def.movement; break;
+      case 'custom': {
+        num('rounds', 1, true); num('restBetweenRoundsSec', 0);
+        var tuples = Array.isArray(raw.steps) ? raw.steps.slice(0, MAX_ITEMS) : [];
+        raw.steps = [];
+        tuples.forEach(function (t) {
+          if (!Array.isArray(t)) return;
+          var sec = t[2];
+          raw.steps.push({
+            label: typeof t[0] === 'string' ? t[0].slice(0, MAX_LABEL) : '',
+            kind: t[1] === 1 ? 'rest' : 'work',
+            durationSec: typeof sec === 'number' && isFinite(sec) ? Math.min(MAX, Math.max(0, sec)) : 0
+          });
+        });
+        if (!raw.steps.length) return null;
+        break;
+      }
+    }
+    if (mode !== 'custom') delete raw.steps;
+    return raw;
+  }
+
+  // ---- formatting: mirrors src/lib/format.ts + src/engine/modes.ts --------
+  function dur(sec) {
+    sec = Math.round(sec);
+    if (sec <= 0) return '0s';
+    var h = Math.floor(sec / 3600), m = Math.floor((sec % 3600) / 60), s = sec % 60;
+    if (h > 0) return m ? h + 'h ' + m + 'm' : h + 'h';
+    if (m > 0) return s ? m + 'm ' + s + 's' : m + ' min';
+    return s + 's';
+  }
+  function clock(sec) {
+    sec = Math.max(0, Math.round(sec));
+    var h = Math.floor(sec / 3600), m = Math.floor((sec % 3600) / 60), s = sec % 60;
+    var p = function (n) { return (n < 10 ? '0' : '') + n; };
+    return h ? h + ':' + p(m) + ':' + p(s) : m + ':' + p(s);
+  }
+  var pos = function (n) { return n > 0 ? n : 0; };
+  var named = function (list) { return (list || []).filter(function (m) { return m.trim(); }); };
+
+  function describe(c) {
+    switch (c.mode) {
+      case 'amrap': return c.sets > 1 ? c.sets + ' × ' + dur(c.durationSec) + (c.restBetweenSetsSec ? ' · ' + dur(c.restBetweenSetsSec) + ' rest' : '') : dur(c.durationSec) + ' AMRAP';
+      case 'emom': {
+        var n = named(c.movements).length;
+        return c.rounds + ' × ' + dur(c.intervalSec) + (n ? ' · ' + n + ' movement' + (n === 1 ? '' : 's') : '');
+      }
+      case 'tabata': case 'interval': return c.rounds + ' × ' + dur(c.workSec) + ' / ' + dur(c.restSec) + (c.sets > 1 ? ' · ' + c.sets + ' sets' : '');
+      case 'fortime': return c.capSec > 0 ? 'Time cap ' + dur(c.capSec) : 'No time cap';
+      case 'countdown': return dur(c.durationSec);
+      case 'stopwatch': return 'Laps & splits';
+      case 'deathby': return (c.movement || 'Reps') + ' · +' + c.increment + ' every ' + dur(c.intervalSec);
+      case 'custom': return c.steps.length + ' step' + (c.steps.length === 1 ? '' : 's') + ' × ' + c.rounds + ' round' + (c.rounds === 1 ? '' : 's');
+    }
+  }
+  function total(c) {
+    switch (c.mode) {
+      case 'amrap': return c.durationSec * c.sets + pos(c.restBetweenSetsSec) * (c.sets - 1);
+      case 'emom': return c.intervalSec * c.rounds;
+      case 'tabata': case 'interval': {
+        var per = c.workSec * c.rounds + pos(c.restSec) * (c.rounds - 1);
+        return per * c.sets + (c.restBetweenSetsSec > 0 ? c.restBetweenSetsSec : pos(c.restSec)) * (c.sets - 1);
+      }
+      case 'fortime': return c.capSec > 0 ? c.capSec : null;
+      case 'countdown': return c.durationSec;
+      case 'stopwatch': return null;
+      case 'deathby': return c.intervalSec * c.maxRounds;
+      case 'custom': {
+        if (c.steps.some(function (s) { return !(s.durationSec > 0); })) return null;
+        var p = c.steps.reduce(function (a, s) { return a + s.durationSec; }, 0);
+        return p * c.rounds + pos(c.restBetweenRoundsSec) * (c.rounds - 1);
+      }
+    }
+  }
+  function stats(c) {
+    var t = total(c), out = [];
+    var add = function (k, v) { out.push([k, v]); };
+    switch (c.mode) {
+      case 'amrap': add('Block', clock(c.durationSec)); if (c.sets > 1) { add('Blocks', c.sets); add('Rest between', clock(c.restBetweenSetsSec)); } break;
+      case 'emom': add('Every', clock(c.intervalSec)); add('Rounds', c.rounds); break;
+      case 'tabata': case 'interval':
+        add('Work', clock(c.workSec)); add('Rest', clock(c.restSec)); add('Rounds', c.rounds);
+        if (c.sets > 1) { add('Sets', c.sets); add('Set rest', clock(c.restBetweenSetsSec)); } break;
+      case 'fortime': add('Time cap', c.capSec > 0 ? clock(c.capSec) : 'None'); if (c.targetRounds > 0) add('Rounds', c.targetRounds); break;
+      case 'deathby': add('Every', clock(c.intervalSec)); add('Start', c.startReps + ' reps'); add('Add', '+' + c.increment); add('Max rounds', c.maxRounds); break;
+      case 'custom': add('Rounds', c.rounds); if (c.restBetweenRoundsSec > 0) add('Round rest', clock(c.restBetweenRoundsSec)); break;
+    }
+    if (c.mode === 'deathby') add('Up to', clock(t));
+    else if (t !== null) add('Total', clock(t));
+    else if (c.mode !== 'stopwatch') add('Total', 'Open');
+    return out;
+  }
+
+  // ---- render --------------------------------------------------------------
+  var $ = function (id) { return document.getElementById(id); };
+  function el(tag, cls, text) { var e = document.createElement(tag); if (cls) e.className = cls; if (text !== undefined) e.textContent = text; return e; }
+
+  function codeFrom(s) {
+    var m = /(?:[#&?]|^)w=([^&\s#]+)/.exec(s || '');
+    if (!m) return null;
+    try { return decodeURIComponent(m[1]); } catch (e) { return m[1]; }
+  }
+
+  function render() {
+    var code = codeFrom(location.hash) || codeFrom(location.search);
+    var cfg = code && decode(code);
+    $('card').hidden = !cfg;
+    $('bad').hidden = !!cfg;
+    if (!cfg) { document.title = 'Shared workout · Pulse'; return; }
+
+    var title = cfg.name || TITLES[cfg.mode];
+    document.title = title + ' · Pulse';
+    $('mode').textContent = TITLES[cfg.mode];
+    $('name').textContent = title;
+    $('desc').textContent = describe(cfg);
+
+    var dl = $('stats'); dl.textContent = '';
+    stats(cfg).forEach(function (kv) { var d = el('div', 'stat'); d.appendChild(el('dt', '', kv[0])); d.appendChild(el('dd', '', String(kv[1]))); dl.appendChild(d); });
+
+    var list = $('list'), lt = $('listTitle'); list.textContent = '';
+    var rows = [];
+    if (cfg.mode === 'custom') {
+      lt.textContent = 'Steps';
+      cfg.steps.forEach(function (s, i) { rows.push({ n: i + 1, label: s.label || (s.kind === 'rest' ? 'Rest' : 'Step ' + (i + 1)), d: s.durationSec > 0 ? clock(s.durationSec) : 'Tap when done', rest: s.kind === 'rest' }); });
+    } else if ((cfg.mode === 'emom' || cfg.mode === 'tabata' || cfg.mode === 'interval') && named(cfg.movements).length) {
+      lt.textContent = cfg.mode === 'emom' ? 'Rotating each minute' : 'Rotating each round';
+      if (cfg.mode === 'emom' && cfg.intervalSec !== 60) lt.textContent = 'Rotating each interval';
+      cfg.movements.forEach(function (m, i) { rows.push({ n: i + 1, label: m || '—', d: cfg.mode === 'emom' ? clock(cfg.intervalSec) : clock(cfg.workSec), rest: /^rest$/i.test(m.trim()) }); });
+    }
+    lt.hidden = list.hidden = !rows.length;
+    rows.forEach(function (r) {
+      var li = el('li', r.rest ? 'rest' : '');
+      var a = el('span'); a.appendChild(el('span', 'n', String(r.n))); a.appendChild(document.createTextNode(' ' + r.label));
+      li.appendChild(a); li.appendChild(el('span', 'd', r.d)); list.appendChild(li);
+    });
+
+    $('open').href = APP_SCHEME ? APP_SCHEME + '://import#w=' + encodeURIComponent(code) : '#get';
+  }
+
+  // Put the visitor's store first.
+  var ua = navigator.userAgent || '';
+  var isIOS = /iPad|iPhone|iPod/.test(ua) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+  var isAndroid = /Android/i.test(ua);
+  $('ios').href = STORE.ios; $('android').href = STORE.android;
+  if (isAndroid) $('badges').insertBefore($('android'), $('ios'));
+
+  $('open').addEventListener('click', function (e) {
+    if (!APP_SCHEME) return;
+    // If the app opens, the page is hidden; otherwise point at the stores.
+    var t = setTimeout(function () {
+      if (document.visibilityState === 'visible') {
+        var g = $('get'); g.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        g.classList.add('flash'); setTimeout(function () { g.classList.remove('flash'); }, 1600);
+      }
+    }, 1400);
+    document.addEventListener('visibilitychange', function () { if (document.hidden) clearTimeout(t); }, { once: true });
+  });
+
+  $('copy').addEventListener('click', function () {
+    var b = this, url = location.href;
+    var done = function () { b.textContent = 'Link copied'; setTimeout(function () { b.textContent = 'Copy link'; }, 1800); };
+    if (navigator.clipboard && window.isSecureContext) navigator.clipboard.writeText(url).then(done, function () { prompt('Copy this link:', url); });
+    else prompt('Copy this link:', url);
+  });
+
+  window.addEventListener('hashchange', render);
+  render();
+})();
+</script>
+</body>
+</html>

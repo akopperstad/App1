@@ -23,7 +23,7 @@ Every timer your training needs: AMRAP, EMOM, For Time, Tabata, intervals and mo
 
 ### Keywords
 ```text
-workout,gym,clock,boxing,round,stopwatch,countdown,circuit,training,e2mom,metcon,kettlebell,rest,beep
+workout,gym,clock,boxing,round,stopwatch,countdown,circuit,training,e2mom,metcon,kettlebell,rest
 ```
 
 ### Description
@@ -46,7 +46,7 @@ EVERY FORMAT YOU TRAIN
 CUES YOU CAN'T MISS
 • 3-2-1 beeps before every change, plus distinct go and rest tones
 • 5 sound styles: Classic, Boxing bell, Whistle, Soft and Digital
-• Voice announcements in English, German, Spanish, French and Norwegian: "Round 3 of 8", "Halfway", "10 seconds"
+• Voice announcements in English, German, Spanish, French and Norwegian: "Round 3 of 8", "Halfway", "Last round"
 • Haptic feedback and a full-screen colour flash on every interval change
 • Lock your phone and keep going: Pulse still alerts you at every work/rest change
 • Plays over your music instead of stopping it
@@ -109,7 +109,7 @@ EVERY FORMAT YOU TRAIN
 CUES YOU CAN'T MISS
 • 3-2-1 beeps before every change, plus distinct go and rest tones
 • 5 sound styles: Classic, Boxing bell, Whistle, Soft and Digital
-• Voice announcements in English, German, Spanish, French and Norwegian: "Round 3 of 8", "Halfway", "10 seconds"
+• Voice announcements in English, German, Spanish, French and Norwegian: "Round 3 of 8", "Halfway", "Last round"
 • Vibration and a full-screen colour flash on every interval change
 • Lock your phone and keep going: Pulse still alerts you at every work/rest change, right on time
 • Plays over your music instead of stopping it

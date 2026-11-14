@@ -21,7 +21,7 @@ Jeder Timer, den dein Training braucht: AMRAP, EMOM, For Time, Tabata, Intervall
 
 ### Keywords
 ```text
-training,timer,intervalltraining,stoppuhr,countdown,boxen,runden,workout,fitness,zirkeltraining,e2mom
+training,timer,intervalltraining,stoppuhr,boxen,runden,workout,fitness,zirkeltraining,e2mom
 ```
 
 ### Description
@@ -44,7 +44,7 @@ JEDES FORMAT, DAS DU TRAINIERST
 SIGNALE, DIE DU NICHT VERPASST
 • 3-2-1-Beeps vor jedem Wechsel, dazu eigene Töne für Start und Pause
 • 5 Soundstile: Klassisch, Boxglocke, Pfeife, Sanft und Digital
-• Sprachansagen auf Deutsch, Englisch, Spanisch, Französisch und Norwegisch: „Runde 3 von 8“, „Halbzeit“, „Noch 10 Sekunden“
+• Sprachansagen auf Deutsch, Englisch, Spanisch, Französisch und Norwegisch: „Runde 3 von 8“, „Halbzeit“, „Letzte Runde“
 • Haptisches Feedback und vollflächiges Farbblitzen bei jedem Intervallwechsel
 • Handy sperren und weitermachen: Pulse meldet sich trotzdem bei jedem Wechsel zwischen Belastung und Pause
 • Läuft über deiner Musik, statt sie zu stoppen
@@ -84,7 +84,7 @@ Pulse: WOD & Intervall-Timer
 
 ### Short description
 ```text
-Timer für AMRAP, EMOM, Tabata & HIIT mit lauten Beeps, Sprachansagen, Vibration.
+Timer für AMRAP, EMOM, Tabata & HIIT: laute Beeps, Sprachansagen und Vibration
 ```
 
 ### Full description
@@ -107,7 +107,7 @@ JEDES FORMAT, DAS DU TRAINIERST
 SIGNALE, DIE DU NICHT VERPASST
 • 3-2-1-Beeps vor jedem Wechsel, dazu eigene Töne für Start und Pause
 • 5 Soundstile: Klassisch, Boxglocke, Pfeife, Sanft und Digital
-• Sprachansagen auf Deutsch, Englisch, Spanisch, Französisch und Norwegisch: „Runde 3 von 8“, „Halbzeit“, „Noch 10 Sekunden“
+• Sprachansagen auf Deutsch, Englisch, Spanisch, Französisch und Norwegisch: „Runde 3 von 8“, „Halbzeit“, „Letzte Runde“
 • Vibration und vollflächiges Farbblitzen bei jedem Intervallwechsel
 • Handy sperren und weitermachen: Pulse meldet sich trotzdem pünktlich bei jedem Wechsel zwischen Belastung und Pause
 • Läuft über deiner Musik, statt sie zu stoppen

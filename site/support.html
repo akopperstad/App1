@@ -1,0 +1,108 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Pulse Support</title>
+<meta name="description" content="Help with Pulse: beeps while the phone is locked, playing over music, backups and more.">
+<meta name="theme-color" content="#f3f3ef" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#050506" media="(prefers-color-scheme: dark)">
+<link rel="icon" href="icon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+<header class="site-header">
+  <div class="wrap">
+    <a class="brand" href="index.html"><img src="icon.svg" alt="" width="32" height="32">Pulse</a>
+    <nav class="nav" aria-label="Main">
+      <a class="hide-sm" href="index.html#features">Features</a>
+      <a href="support.html" aria-current="page">Support</a>
+      <a href="privacy.html">Privacy</a>
+    </nav>
+  </div>
+</header>
+
+<main class="wrap prose">
+  <h1>Support</h1>
+  <p class="meta">Answers to common questions. Still stuck? <a href="#contact">Contact us</a>.</p>
+
+  <div class="faq">
+    <details id="locked" open>
+      <summary>Do I get beeps while my phone is locked?</summary>
+      <div>
+        <p>Yes. When you lock the screen or switch to another app mid-workout, Pulse schedules an alert with sound at every work/rest change ("Rest", "Work, round 4/8", "Time!"), so you keep getting cues with the screen off. When you come back to Pulse, the full beeps and voice take over again.</p>
+        <p>If you don't get alerts:</p>
+        <ul>
+          <li><strong>Allow notifications.</strong> Pulse asks the first time you start a timer. If you declined, enable them in <em>Settings › Notifications › Pulse</em> (iPhone) or <em>Settings › Apps › Pulse › Notifications</em> (Android).</li>
+          <li><strong>Check Focus / Do Not Disturb.</strong> A Focus mode can silence notifications. Allow Pulse in that Focus, or turn it off while training.</li>
+          <li><strong>iPhone: the side switch.</strong> With silent mode on, notification sounds are muted. Turn silent mode off.</li>
+          <li><strong>Android: battery optimisation.</strong> Some phones delay alarms for apps under strict battery saving. Set Pulse to "Unrestricted" in the app's battery settings.</li>
+        </ul>
+        <p>Tip: the most reliable option is still to keep Pulse on screen. It keeps the display awake while a timer runs.</p>
+      </div>
+    </details>
+    <details id="music">
+      <summary>Will Pulse stop my music or podcast?</summary>
+      <div>
+        <p>No. Beeps and voice announcements play over whatever you're listening to (Spotify, Apple Music, YouTube Music, podcasts…) instead of pausing it. On iPhone you can change this in Pulse's Settings if you'd rather Pulse take over the audio.</p>
+        <p>If cues are too quiet over loud music, raise Pulse's volume in Settings › Sound, or try the Boxing bell or Whistle sound style, which cut through music best.</p>
+      </div>
+    </details>
+    <details id="no-sound">
+      <summary>I can't hear any beeps at all</summary>
+      <div>
+        <ul>
+          <li>Turn the media volume up and, on iPhone, make sure silent mode is off.</li>
+          <li>In Pulse, open Settings › Sound and check that Sound is on, then tap <em>Test sound</em>.</li>
+          <li>If you use Bluetooth headphones, check they're connected. Pulse plays through the current audio output.</li>
+        </ul>
+      </div>
+    </details>
+    <details id="voice">
+      <summary>How do I change the voice language?</summary>
+      <div><p>Voice announcements follow the app language (Settings › Language): English, Norsk, Deutsch, Español or Français. They use your device's built-in speech voices; if a language sounds robotic, install a better voice in your phone's accessibility or text-to-speech settings.</p></div>
+    </details>
+    <details id="backup">
+      <summary>How do I back up my data or move to a new phone?</summary>
+      <div>
+        <p>Pulse stores everything on your device and has no account, so nothing is synced automatically. To keep a copy:</p>
+        <ol>
+          <li>Open <strong>Settings › Your data › Back up all data</strong>. Pulse creates a backup file with your settings, saved workouts and history.</li>
+          <li>Save it to Files, iCloud Drive, Google Drive, email it to yourself, or AirDrop it to your new phone.</li>
+          <li>On the new device, open <strong>Settings › Your data › Restore from backup</strong> and pick the file. Restoring merges: anything already on the device is kept and duplicates are skipped.</li>
+        </ol>
+        <p>Want your history in a spreadsheet? Use <strong>Export history (CSV)</strong> and open it in Numbers, Excel or Google Sheets.</p>
+      </div>
+    </details>
+    <details id="share">
+      <summary>How do I share a workout?</summary>
+      <div><p>Open a workout's setup and tap <strong>Share workout</strong> to send it as a link. Anyone with Pulse can open the link to load it. If a link doesn't open the app, copy it and use <strong>Settings › Your data › Import a shared workout</strong>.</p></div>
+    </details>
+    <details id="accuracy">
+      <summary>How accurate is the timer?</summary>
+      <div><p>Pulse reads time from your device's monotonic clock rather than counting ticks, so it doesn't drift during long workouts and catches up exactly after you switch apps. Each beep and cue fires exactly once.</p></div>
+    </details>
+    <details id="delete">
+      <summary>How do I delete my history?</summary>
+      <div><p>Open History and tap <strong>Clear all</strong>, or delete a single entry from its detail view. Uninstalling the app removes all Pulse data from the device.</p></div>
+    </details>
+  </div>
+
+  <h2 id="contact">Contact</h2>
+  <p>Found a bug or have an idea? We read every message.</p>
+  <p>Email: <span class="todo">TODO: support@your-domain</span></p>
+  <p>Please include your device model, OS version and the Pulse version (shown at the bottom of Settings).</p>
+</main>
+
+<footer class="site-footer">
+  <div class="wrap">
+    <div>© 2026 Pulse</div>
+    <nav aria-label="Footer">
+      <a href="support.html">Support</a>
+      <a href="privacy.html">Privacy</a>
+      <a href="terms.html">Terms</a>
+    </nav>
+  </div>
+</footer>
+</body>
+</html>

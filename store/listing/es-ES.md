@@ -21,7 +21,7 @@ Todos los temporizadores que tu entreno necesita: AMRAP, EMOM, For Time, Tabata,
 
 ### Keywords
 ```text
-cronometro,intervalos,entrenamiento,timer,rondas,cuenta,atras,gimnasio,funcional,circuito,workout,e2mom
+cronometro,intervalos,entrenamiento,rondas,cuenta,atras,gimnasio,funcional,circuito,workout,e2mom
 ```
 
 ### Description
@@ -44,7 +44,7 @@ TODOS LOS FORMATOS QUE ENTRENAS
 AVISOS IMPOSIBLES DE IGNORAR
 • Pitidos 3-2-1 antes de cada cambio y tonos distintos para empezar y descansar
 • 5 estilos de sonido: Clásico, Campana de boxeo, Silbato, Suave y Digital
-• Anuncios por voz en español, inglés, alemán, francés y noruego: «Ronda 3 de 8», «Mitad», «10 segundos»
+• Anuncios por voz en español, inglés, alemán, francés y noruego: «Ronda 3 de 8», «Mitad», «Última ronda»
 • Vibración y destello de color a pantalla completa en cada cambio de intervalo
 • Bloquea el móvil y sigue: Pulse te avisa igualmente en cada cambio entre trabajo y descanso
 • Suena por encima de tu música en lugar de pararla
@@ -107,7 +107,7 @@ TODOS LOS FORMATOS QUE ENTRENAS
 AVISOS IMPOSIBLES DE IGNORAR
 • Pitidos 3-2-1 antes de cada cambio y tonos distintos para empezar y descansar
 • 5 estilos de sonido: Clásico, Campana de boxeo, Silbato, Suave y Digital
-• Anuncios por voz en español, inglés, alemán, francés y noruego: «Ronda 3 de 8», «Mitad», «10 segundos»
+• Anuncios por voz en español, inglés, alemán, francés y noruego: «Ronda 3 de 8», «Mitad», «Última ronda»
 • Vibración y destello de color a pantalla completa en cada cambio de intervalo
 • Bloquea el móvil y sigue: Pulse te avisa igualmente, a tiempo, en cada cambio entre trabajo y descanso
 • Suena por encima de tu música en lugar de pararla
