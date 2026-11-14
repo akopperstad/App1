@@ -1,5 +1,5 @@
 import { useMemo, useState, type CSSProperties } from 'react';
-import { BUILT_IN_PRESETS, MODES, benchConfig, benchName, describe, modeInfo, modeTagline, modeTitle, totalSeconds } from '../engine/modes';
+import { BUILT_IN_PRESETS, MODES, benchConfig, benchName, describe, entryTitle, modeInfo, modeTagline, modeTitle, totalSeconds } from '../engine/modes';
 import type { WorkoutConfig } from '../engine/types';
 import { useT, type Translator } from '../i18n';
 import { formatDuration } from '../lib/format';
@@ -146,6 +146,7 @@ export function Home() {
   const recentInfo = recent ? modeInfo(recent.mode) : null;
   const recentTotal = recent ? totalSeconds(recent.config) : null;
   const recentTitle = recent ? modeTitle(recent.mode, tr) : '';
+  const recentName = recent ? entryTitle(recent.name, recent.mode, tr) : '';
 
   return (
     <div className="ui-page home">
@@ -208,7 +209,7 @@ export function Home() {
             className="home__quick"
             style={accentStyle(recentInfo.accent)}
             onClick={() => startWorkout(nav, recent.config)}
-            aria-label={t('home.repeatAria', { name: recent.name || recentTitle })}
+            aria-label={t('home.repeatAria', { name: recentName })}
           >
             <span className="home__quick-glow" aria-hidden />
             <span className="home__quick-top">
@@ -222,9 +223,9 @@ export function Home() {
                 <Icon name={modeIcon(recent.mode)} size={26} strokeWidth={2.2} />
               </span>
               <span className="home__quick-text">
-                <span className="home__quick-name">{recent.name || recentTitle}</span>
+                <span className="home__quick-name">{recentName}</span>
                 <span className="home__quick-meta num">
-                  {recent.name && recent.name !== recentInfo.title && recent.name !== recentTitle && `${recentTitle} · `}
+                  {recentName !== recentTitle && `${recentTitle} · `}
                   {describe(recent.config, tr)}
                   {recentTotal !== null && recent.config.mode !== 'countdown' && recent.config.mode !== 'amrap'
                     ? ` · ${formatDuration(recentTotal, tr)}`

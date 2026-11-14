@@ -1,5 +1,5 @@
 import { useMemo, useState, type CSSProperties } from 'react';
-import { describe, modeInfo } from '../engine/modes';
+import { describe, entryTitle, modeInfo } from '../engine/modes';
 import type { Mode } from '../engine/types';
 import { computeRecords, startOfDay, startOfWeek, weeklyMinutes, type PersonalRecord } from '../features/records';
 import { WeeklyChart } from '../features/WeeklyChart';
@@ -202,7 +202,8 @@ export function History() {
 }
 
 function Records({ records }: { records: PersonalRecord[] }) {
-  const { t, tp } = useT();
+  const tr = useT();
+  const { t, tp } = tr;
   return (
     <section className="hist-records" aria-labelledby="hist-records-title">
       <h2 id="hist-records-title" className="hist-group__title">
@@ -214,7 +215,7 @@ function Records({ records }: { records: PersonalRecord[] }) {
             <span className="hist-record__icon" aria-hidden>
               <Icon name="trophy" size={16} />
             </span>
-            <span className="hist-record__name">{r.name}</span>
+            <span className="hist-record__name">{entryTitle(r.name, r.mode, tr)}</span>
             <span className="hist-record__value num">
               {r.kind === 'time' ? formatClockString(r.value) : tp('hist.rounds', r.value)}
             </span>
@@ -259,6 +260,7 @@ function EntryRow({
   const { t, tp, locale } = tr;
   const info = modeInfo(h.mode);
   const title = t(`mode.${h.mode}`);
+  const name = entryTitle(h.name, h.mode, tr);
   const time = new Date(h.startedAt).toLocaleTimeString(locale, { hour: 'numeric', minute: '2-digit' });
   const rounds = splits(h.roundTimesMs ?? []);
   const laps = h.laps ?? [];
@@ -269,9 +271,9 @@ function EntryRow({
       <button type="button" className="hist-row__main" aria-expanded={open} aria-controls={detailsId} onClick={onToggle}>
         <span className="hist-row__bar" aria-hidden />
         <span className="hist-row__text">
-          <span className="hist-row__name">{h.name || title}</span>
+          <span className="hist-row__name">{name}</span>
           <span className="hist-row__meta">
-            {h.name && h.name !== info.title && h.name !== title ? `${title} · ` : ''}
+            {name !== title ? `${title} · ` : ''}
             {describe(h.config, tr)} · {time}
           </span>
         </span>

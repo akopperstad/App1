@@ -10,6 +10,7 @@ import { MODES } from '../engine/modes';
 import type { WorkoutConfig } from '../engine/types';
 import { NavContext, type Nav } from '../nav';
 import { Configure } from '../screens/Configure';
+import { History } from '../screens/History';
 import { Home } from '../screens/Home';
 import { Run } from '../screens/Run';
 import { SettingsScreen } from '../screens/Settings';
@@ -31,7 +32,7 @@ const LEAKS = [
 ];
 /** Words that are also correct in that language ("Workout" is standard German, "segments" French). */
 const SAME_IN: Partial<Record<Lang, string[]>> = {
-  de: ['Workout', 'workout', 'workouts', 'Home'],
+  de: ['Workout', 'workout', 'workouts', 'Home', 'Timers'],
   fr: ['segments'],
 };
 const leakRe = (lang: Lang) => {
@@ -109,6 +110,21 @@ describe.each(LANGS)('no English leaks (%s)', (lang) => {
     mount(<Home />);
     expect(document.documentElement).toBeTruthy();
     expectNoLeak('Home');
+  });
+
+  it('History + Home with sessions saved the way the run screen saves them (English mode title as name)', () => {
+    setLang(lang);
+    // buildEntry() stores unnamed workouts under the English mode title, and
+    // older versions did the same: those must be shown in the UI language.
+    historyStore.set([
+      { ...seeded, id: 'a', name: 'Intervals' },
+      { ...seeded, id: 'b', name: 'Stopwatch', mode: 'stopwatch', config: { mode: 'stopwatch' } },
+    ]);
+    const home = mount(<Home />);
+    expectNoLeak('Home (recent session)');
+    home.unmount();
+    mount(<History />);
+    expectNoLeak('History');
   });
 
   it('Configure (every mode)', () => {

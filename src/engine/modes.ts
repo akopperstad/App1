@@ -124,6 +124,15 @@ export function modeTitle(mode: Mode, tr: Translator = EN): string {
   return tr.t(`mode.${mode}` as Key);
 }
 
+/**
+ * Display name for a saved session / record. Unnamed workouts are stored with
+ * the English mode title ("Stopwatch"); show those in the user's language.
+ */
+export function entryTitle(name: string | undefined, mode: Mode, tr: Translator = EN): string {
+  const n = (name ?? '').trim();
+  return !n || n === modeInfo(mode).title ? modeTitle(mode, tr) : n;
+}
+
 /** One-line explanation for the mode card / configure header. */
 export function modeTagline(mode: Mode, tr: Translator = EN): string {
   return tr.t(`modeTag.${mode}` as Key);
