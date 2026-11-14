@@ -7,6 +7,7 @@ import { normalizeConfig } from '../engine/normalize';
 import type { Cue, SegmentKind, Snapshot, WorkoutConfig } from '../engine/types';
 import { formatClock, formatDuration } from '../lib/format';
 import { useWakeLock } from '../lib/wakeLock';
+import { useBackgroundCues } from '../native/useBackgroundCues';
 import { useNav } from '../nav';
 import { saveHistory, settingsStore, useSettings } from '../state/store';
 import {
@@ -182,6 +183,7 @@ export function Run({ config: rawConfig }: { config: WorkoutConfig }) {
   }, [active]);
 
   useWakeLock(settings.keepAwake && active);
+  useBackgroundCues(engine); // native: notifications at segment boundaries while locked/backgrounded
 
   // ------------------------------------------------------------ actions
   const begin = useCallback(() => {
@@ -271,6 +273,10 @@ export function Run({ config: rawConfig }: { config: WorkoutConfig }) {
       if (document.fullscreenElement) document.exitFullscreen?.().catch(() => {});
     };
   }, []);
+  /** "Big clock" focus mode: tap the clock to hide secondary chrome. */
+  const [focus, setFocus] = useState(false);
+  const toggleFocus = useCallback(() => setFocus((f) => !f), []);
+
   const toggleFs = useCallback(() => {
     if (!fsSupported) return;
     if (document.fullscreenElement) document.exitFullscreen().catch(() => {});
@@ -580,8 +586,9 @@ export function Run({ config: rawConfig }: { config: WorkoutConfig }) {
   }
 
   return (
-    <div className="run" data-phase={phase} data-status={status} style={style}>
+    <div className="run" data-phase={phase} data-status={status} data-focus={focus && active ? '' : undefined} style={style}>
       <div className="run__bg" aria-hidden="true" />
+      {clock.final > 0 && <div key={clock.final} className="run__beat" aria-hidden="true" />}
       {flash && settings.flashOnChange && (
         <div key={flash.n} className={`run__flash run__flash--${flash.kind}`} aria-hidden="true" />
       )}
@@ -603,6 +610,16 @@ export function Run({ config: rawConfig }: { config: WorkoutConfig }) {
             aria-pressed={isFs}
           >
             {isFs ? <IconShrink size={22} /> : <IconExpand size={22} />}
+          </button>
+        ) : active ? (
+          <button
+            type="button"
+            className="icon-btn"
+            onClick={toggleFocus}
+            aria-label="Big clock"
+            aria-pressed={focus}
+          >
+            {focus ? <IconShrink size={22} /> : <IconExpand size={22} />}
           </button>
         ) : (
           <span className="icon-btn icon-btn--ghost" aria-hidden="true" />
@@ -632,7 +649,7 @@ export function Run({ config: rawConfig }: { config: WorkoutConfig }) {
               </div>
             </div>
 
-            <div className="stage">
+            <div className="stage" onClick={active ? toggleFocus : undefined}>
               <div className="stage__ring">
                 <ProgressRing bus={bus} value={ring} />
               </div>

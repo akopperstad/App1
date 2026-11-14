@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
 import { NavContext, type Nav, type Route } from './nav';
 import { useSettings } from './state/store';
 import { Home } from './screens/Home';
@@ -6,12 +6,16 @@ import { Configure } from './screens/Configure';
 import { Run } from './screens/Run';
 import { History } from './screens/History';
 import { SettingsScreen } from './screens/Settings';
+import { Onboarding } from './screens/Onboarding';
+import { useShareLinks, withLaunchImport } from './features/shareActions';
+import { Toaster } from './features/toast';
+import { useDocumentLang } from './i18n';
 
 /**
  * Screen stack synced with browser history so the hardware / browser back
  * button behaves naturally (important on Android and in installed PWAs).
  */
-const ROUTES = new Set(['home', 'configure', 'run', 'history', 'settings']);
+const ROUTES = new Set(['home', 'configure', 'run', 'history', 'settings', 'onboarding']);
 
 /** Each history entry carries the whole screen stack so reload / forward restore it. */
 interface NavState {
@@ -34,7 +38,7 @@ function readState(state: unknown): NavState | null {
  * screen and back / forward keep working one screen per press.
  */
 export function App() {
-  const [stack, setStack] = useState<Route[]>(() => readState(history.state)?.stack ?? [{ name: 'home' }]);
+  const [stack, setStack] = useState<Route[]>(() => withLaunchImport(readState(history.state)?.stack ?? [{ name: 'home' }]));
   const stackRef = useRef(stack);
   stackRef.current = stack;
 
@@ -74,10 +78,14 @@ export function App() {
   const nav: Nav = useMemo(() => ({ route, go, replace, back }), [route, go, replace, back]);
 
   useTheme();
+  useDocumentLang();
+  useShareLinks(go);
+  const { onboarded } = useSettings();
 
   return (
     <NavContext.Provider value={nav}>
-      <Screen route={route} depth={stack.length} />
+      {onboarded || route.name === 'onboarding' ? <Screen route={route} depth={stack.length} /> : <Onboarding />}
+      <Toaster />
     </NavContext.Provider>
   );
 }
@@ -94,7 +102,15 @@ function Screen({ route, depth }: { route: Route; depth: number }) {
       return <History />;
     case 'settings':
       return <SettingsScreen />;
+    case 'onboarding':
+      return <OnboardingRoute />;
   }
+}
+
+/** Intro replayed from Settings: finishing returns to the previous screen. */
+function OnboardingRoute() {
+  const nav = useContext(NavContext);
+  return <Onboarding onFinish={() => nav?.back()} />;
 }
 
 function useTheme() {

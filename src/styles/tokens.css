@@ -1,28 +1,43 @@
 /*
  * Pulse design tokens.
- * Dark-first, high-contrast, built to be read from across a gym.
- * Light theme is supported via [data-theme="light"] or system preference.
+ *
+ * Two designed themes (not an inversion):
+ *  - Dark: OLED near-black canvas, layered charcoal surfaces with a faint top
+ *    highlight for depth, luminous accents.
+ *  - Light: warm paper canvas, white cards lifted with soft layered shadows,
+ *    deeper accent inks that pass WCAG AA against white.
+ * Theme comes from [data-theme] on <html> (set before first paint).
  */
 :root {
   color-scheme: dark;
 
+  /* Brand */
+  --brand: #ff5b3a;
+  --brand-2: #ff3d2e;
+  --brand-grad: linear-gradient(135deg, #ff7a4d 0%, #ff3d2e 100%);
+
   /* Surfaces */
-  --bg: #0a0b0d;
-  --bg-elev: #131519;
-  --bg-elev-2: #1b1e24;
-  --bg-press: #23272e;
-  --line: #262a31;
-  --line-strong: #353a43;
+  --bg: #050506;
+  --bg-elev: #111215;
+  --bg-elev-2: #1b1d21;
+  --bg-press: #25272d;
+  --line: #222429;
+  --line-strong: #34373e;
+  /* Card fill: a whisper of vertical gradient so surfaces don't look flat. */
+  --card: linear-gradient(180deg, #141519 0%, #101114 100%);
+  /* Top-edge highlight (dark) / nothing (light). */
+  --hi: inset 0 1px 0 rgba(255, 255, 255, 0.045);
+  --scrim: rgba(0, 0, 0, 0.6);
 
   /* Text */
-  --fg: #f4f5f7;
-  --fg-2: #a9afba;
-  --fg-3: #6c7380;
+  --fg: #f5f6f8;
+  --fg-2: #abb1bc;
+  --fg-3: #80868f;
   --fg-on-accent: #0a0b0d;
 
-  /* Phase colours (used by the run screen) */
+  /* Phase colours (run screen) */
   --work: #ff5b3a;
-  --work-soft: rgba(255, 91, 58, 0.14);
+  --work-soft: rgba(255, 91, 58, 0.15);
   --rest: #2fd3b4;
   --rest-soft: rgba(47, 211, 180, 0.14);
   --prep: #ffc23d;
@@ -42,21 +57,28 @@
   --mode-stopwatch: #9be15d;
 
   --danger: #ff4d5e;
+  --success: #2fd3b4;
   --focus: #7ab8ff;
 
-  /* Type */
-  --font: ui-sans-serif, -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Segoe UI', Roboto,
+  /* Type — system only. Rounded display face where the OS has one (SF Pro Rounded). */
+  --font: system-ui, -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Segoe UI', Roboto, 'Helvetica Neue', Arial,
+    sans-serif;
+  --font-display: ui-rounded, 'SF Pro Rounded', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto,
     'Helvetica Neue', Arial, sans-serif;
   --font-mono: ui-monospace, 'SF Mono', 'JetBrains Mono', Menlo, Consolas, monospace;
 
-  --fs-xs: 0.75rem;
-  --fs-sm: 0.875rem;
-  --fs-md: 1rem;
-  --fs-lg: 1.25rem;
-  --fs-xl: 1.75rem;
-  --fs-2xl: 2.5rem;
+  --fs-2xs: 0.6875rem; /* 11 */
+  --fs-xs: 0.75rem; /* 12 */
+  --fs-sm: 0.875rem; /* 14 */
+  --fs-md: 1rem; /* 16 */
+  --fs-lg: 1.25rem; /* 20 */
+  --fs-xl: 1.75rem; /* 28 */
+  --fs-2xl: 2.25rem; /* 36 */
+  --fs-3xl: 3.25rem; /* 52 */
+  --track-caps: 0.12em;
+  --track-tight: -0.03em;
 
-  /* Space & shape */
+  /* Space (4pt grid) & shape */
   --s-1: 4px;
   --s-2: 8px;
   --s-3: 12px;
@@ -64,50 +86,94 @@
   --s-5: 24px;
   --s-6: 32px;
   --s-7: 48px;
-  --r-sm: 10px;
+  --r-xs: 8px;
+  --r-sm: 12px;
   --r-md: 16px;
-  --r-lg: 24px;
+  --r-lg: 22px;
+  --r-xl: 28px;
   --r-pill: 999px;
 
-  --shadow: 0 10px 30px rgba(0, 0, 0, 0.35);
+  /* Elevation */
+  --shadow-1: 0 1px 2px rgba(0, 0, 0, 0.5);
+  --shadow-2: 0 2px 4px rgba(0, 0, 0, 0.35), 0 10px 28px -8px rgba(0, 0, 0, 0.6);
+  --shadow-3: 0 24px 64px -12px rgba(0, 0, 0, 0.75);
+  --shadow: var(--shadow-3);
+
+  /* Motion */
   --ease: cubic-bezier(0.2, 0.8, 0.2, 1);
-  --dur: 180ms;
+  --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-spring: cubic-bezier(0.34, 1.45, 0.64, 1);
+  --dur-fast: 120ms;
+  --dur: 200ms;
+  --dur-slow: 380ms;
+  --press-scale: 0.96;
 
   --safe-top: env(safe-area-inset-top, 0px);
   --safe-bottom: env(safe-area-inset-bottom, 0px);
   --safe-left: env(safe-area-inset-left, 0px);
   --safe-right: env(safe-area-inset-right, 0px);
 
+  --tap: 44px;
   --content-max: 560px;
 }
 
 :root[data-theme='light'] {
   color-scheme: light;
-  --bg: #f6f6f4;
+  --bg: #f3f3ef;
   --bg-elev: #ffffff;
-  --bg-elev-2: #efefec;
-  --bg-press: #e4e4e0;
-  --line: #e2e2de;
-  --line-strong: #cfcfca;
-  --fg: #111214;
-  --fg-2: #4f5560;
-  --fg-3: #858b96;
+  --bg-elev-2: #ecece7;
+  --bg-press: #e1e1db;
+  --line: #e3e3dd;
+  --line-strong: #cbcbc4;
+  --card: #ffffff;
+  --hi: inset 0 0 0 0 transparent;
+  --scrim: rgba(18, 18, 22, 0.38);
+
+  --fg: #0f1013;
+  --fg-2: #4d535e;
+  --fg-3: #6b7079;
   --fg-on-accent: #ffffff;
-  --work: #e8431f;
-  --work-soft: rgba(232, 67, 31, 0.12);
-  --rest: #0e9e84;
-  --rest-soft: rgba(14, 158, 132, 0.12);
-  --prep: #d99a00;
-  --prep-soft: rgba(217, 154, 0, 0.14);
+
+  /* Deeper, ink-safe phase colours: white text on them passes AA-large. */
+  --work: #e5401c;
+  --work-soft: rgba(229, 64, 28, 0.12);
+  --rest: #0b8f76;
+  --rest-soft: rgba(11, 143, 118, 0.12);
+  --prep: #f2a900;
+  --prep-soft: rgba(242, 169, 0, 0.16);
   --done: #5b4ae6;
   --done-soft: rgba(91, 74, 230, 0.12);
-  --shadow: 0 8px 24px rgba(17, 18, 20, 0.08);
+
+  /* Mode accents re-tuned for light (≥ 3.7:1 with white, ≥ 3:1 on paper). */
+  --mode-amrap: #e5401c;
+  --mode-emom: #c25e00;
+  --mode-fortime: #e0194f;
+  --mode-tabata: #0789b0;
+  --mode-interval: #0b8f76;
+  --mode-deathby: #9b3fd9;
+  --mode-custom: #5b4ae6;
+  --mode-countdown: #b07a00;
+  --mode-stopwatch: #458a19;
+
+  --danger: #d92537;
+  --success: #0b8f76;
+  --focus: #2f6fe0;
+
+  --shadow-1: 0 1px 2px rgba(22, 22, 30, 0.06), 0 0 0 1px rgba(22, 22, 30, 0.02);
+  --shadow-2: 0 1px 2px rgba(22, 22, 30, 0.05), 0 8px 24px -8px rgba(22, 22, 30, 0.14);
+  --shadow-3: 0 24px 60px -16px rgba(22, 22, 30, 0.3);
 }
 
 *,
 *::before,
 *::after {
   box-sizing: border-box;
+}
+
+html {
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+  background: var(--bg);
 }
 
 html,
@@ -124,9 +190,11 @@ body {
   font-size: var(--fs-md);
   line-height: 1.4;
   -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
   -webkit-tap-highlight-color: transparent;
   overscroll-behavior: none;
   touch-action: manipulation;
+  text-rendering: optimizeLegibility;
 }
 
 button,
@@ -142,11 +210,36 @@ button {
   border: 0;
   background: none;
   padding: 0;
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* Controls behave like native controls: no text selection, no iOS callout on long-press. */
+button,
+[role='button'],
+[role='tab'],
+[role='switch'],
+label,
+summary {
+  -webkit-user-select: none;
+  user-select: none;
+  -webkit-touch-callout: none;
+}
+
+img,
+svg {
+  -webkit-user-drag: none;
 }
 
 :focus-visible {
-  outline: 2px solid var(--focus);
+  outline: 2.5px solid var(--focus);
   outline-offset: 2px;
+}
+:focus:not(:focus-visible) {
+  outline: none;
+}
+
+::selection {
+  background: color-mix(in srgb, var(--brand) 35%, transparent);
 }
 
 .num {
@@ -168,6 +261,8 @@ button {
   *::before,
   *::after {
     animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
     transition-duration: 0.001ms !important;
+    scroll-behavior: auto !important;
   }
 }

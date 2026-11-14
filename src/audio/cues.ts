@@ -1,7 +1,10 @@
 import type { Cue, Segment } from '../engine/types';
-import type { Settings } from '../state/store';
+import { resolveLang, spokenPhrases, type SpokenPhrases } from '../i18n';
+import type { Settings, SoundPack } from '../state/store';
+import { backgroundCuesArmed } from '../native/background';
+import { nativeHaptic, type HapticKind } from '../native/haptics';
+import { isNative } from '../native/platform';
 import { setVolume, unlockAudio } from './context';
-import { minutePhrase, segmentPhrase } from './phrases';
 import { primeSpeech, say, stopSpeech } from './speech';
 import {
   click,
@@ -24,13 +27,18 @@ const PATTERN = {
   milestone: [40, 70, 40],
   finish: [120, 70, 120, 70, 120, 70, 650],
   click: [20],
-} satisfies Record<string, number[]>;
+} satisfies Record<HapticKind, number[]>;
 
-function vibrate(settings: Settings, pattern: number[]): void {
+/** Web: navigator.vibrate pattern. Native app: Taptic / vibrator effects (iOS has no navigator.vibrate). */
+function vibrate(settings: Settings, kind: HapticKind): void {
   if (!settings.vibration) return;
   try {
+    if (isNative()) {
+      nativeHaptic(kind);
+      return;
+    }
     if (typeof navigator !== 'undefined' && typeof navigator.vibrate === 'function') {
-      navigator.vibrate(pattern);
+      navigator.vibrate(PATTERN[kind]);
     }
   } catch {
     /* ignore */
@@ -46,6 +54,7 @@ function vibrate(settings: Settings, pattern: number[]): void {
  */
 let pending: string[] = [];
 let pendingVolume = 1;
+let pendingLang = 'en-US';
 let flushScheduled = false;
 
 /** Drop queued phrases and silence anything being spoken. */
@@ -57,6 +66,7 @@ function silence(): void {
 function speak(settings: Settings, text: string): void {
   if (!settings.voice || !text) return;
   pendingVolume = settings.volume;
+  pendingLang = phrases(settings).speechLang;
   if (!pending.includes(text)) pending.push(text);
   if (flushScheduled) return;
   flushScheduled = true;
@@ -64,35 +74,40 @@ function speak(settings: Settings, text: string): void {
     flushScheduled = false;
     const phrase = pending.join('. ');
     pending = [];
-    if (phrase) say(phrase, pendingVolume);
+    if (phrase) say(phrase, pendingVolume, pendingLang);
   });
+}
+
+/** Spoken phrases in the user's language (settings.language, 'auto' = device). */
+function phrases(settings: Settings): SpokenPhrases {
+  return spokenPhrases(resolveLang(settings.language));
 }
 
 // Dedupe sounds triggered in the same tick (one blip, not two).
 let lastSound = '';
 let lastSoundAt = 0;
-function sound(settings: Settings, name: string, fn: () => void): void {
+function sound(settings: Settings, name: string, fn: (pack: SoundPack) => void): void {
   if (!settings.sound || !(settings.volume > 0)) return;
   const now = Date.now();
   if (name === lastSound && now - lastSoundAt < 150) return;
   lastSound = name;
   lastSoundAt = now;
   setVolume(settings.volume);
-  fn();
+  fn(settings.soundPack);
 }
 
 function enterSegment(seg: Segment, settings: Settings): void {
   if (seg.kind === 'work') {
     sound(settings, 'go', goTone);
-    vibrate(settings, PATTERN.work);
+    vibrate(settings, 'work');
   } else if (seg.kind === 'rest') {
     sound(settings, 'rest', restTone);
-    vibrate(settings, PATTERN.rest);
+    vibrate(settings, 'rest');
   } else {
     sound(settings, 'tick', softTick);
-    vibrate(settings, PATTERN.prep);
+    vibrate(settings, 'prep');
   }
-  speak(settings, segmentPhrase(seg));
+  speak(settings, phrases(settings).segment(seg));
 }
 
 // ------------------------------------------------------------------ public contract
@@ -125,6 +140,9 @@ export const cuePlayer = {
   },
 
   handle(cue: Cue, settings: Settings): void {
+    // App in the background with system notifications standing in for cues
+    // (native only): stay quiet so nothing plays twice.
+    if (backgroundCuesArmed()) return;
     try {
       switch (cue.type) {
         case 'start':
@@ -137,40 +155,40 @@ export const cuePlayer = {
           if (!settings.countdownBeeps) break;
           if (cue.n < 1 || cue.n > 3) break;
           sound(settings, `cd${cue.n}`, countdownBeep);
-          vibrate(settings, PATTERN.countdown);
+          vibrate(settings, 'countdown');
           break;
         case 'halfway':
           if (!settings.milestoneCues) break;
           sound(settings, 'blip', doubleBlip);
-          vibrate(settings, PATTERN.milestone);
-          speak(settings, 'Halfway');
+          vibrate(settings, 'milestone');
+          speak(settings, phrases(settings).halfway);
           break;
         case 'tenSeconds':
           if (!settings.milestoneCues) break;
           sound(settings, 'blip', doubleBlip);
-          vibrate(settings, PATTERN.milestone);
-          speak(settings, 'Ten seconds');
+          vibrate(settings, 'milestone');
+          speak(settings, phrases(settings).tenSeconds);
           break;
         case 'minute':
           if (!settings.milestoneCues) break;
           sound(settings, 'blip', doubleBlip);
-          vibrate(settings, PATTERN.milestone);
-          speak(settings, minutePhrase(cue.minutesRemaining, cue.minutesElapsed));
+          vibrate(settings, 'milestone');
+          speak(settings, phrases(settings).minute(cue.minutesRemaining, cue.minutesElapsed));
           break;
         case 'finish':
           sound(settings, 'finish', finishFanfare);
-          vibrate(settings, PATTERN.finish);
-          speak(settings, 'Time! Great work');
+          vibrate(settings, 'finish');
+          speak(settings, phrases(settings).finish);
           break;
         case 'pause':
           // A stale "Ten seconds" must not be spoken while the clock is stopped.
           silence();
-          sound(settings, 'pause', () => click(false));
-          vibrate(settings, PATTERN.click);
+          sound(settings, 'pause', (p) => click(false, p));
+          vibrate(settings, 'click');
           break;
         case 'resume':
-          sound(settings, 'resume', () => click(true));
-          vibrate(settings, PATTERN.click);
+          sound(settings, 'resume', (p) => click(true, p));
+          vibrate(settings, 'click');
           break;
       }
     } catch {
@@ -189,14 +207,14 @@ export const cuePlayer = {
       for (let i = 0; i < 3; i++) {
         later(i * step, () => {
           sound(s, `test${i}`, countdownBeep);
-          vibrate(s, PATTERN.countdown);
+          vibrate(s, 'countdown');
         });
       }
       later(3 * step, () => {
         sound(s, 'test-go', goTone);
-        vibrate(s, PATTERN.work);
+        vibrate(s, 'work');
       });
-      later(3 * step + 600, () => speak(s, 'Sound check'));
+      later(3 * step + 600, () => speak(s, phrases(s).soundCheck));
     } catch {
       /* ignore */
     }

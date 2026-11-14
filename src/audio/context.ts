@@ -128,3 +128,18 @@ export function unlockAudio(): void {
     /* ignore */
   }
 }
+
+/**
+ * Best-effort resume after the app returns from the background or an audio
+ * interruption (phone call, Siri). Not a gesture, so it may be refused; the
+ * next cue retries via withAudio(). Never creates a context.
+ */
+export function resumeAudio(): void {
+  if (!ctx || ctx.state === 'running') return;
+  try {
+    const p = ctx.resume();
+    if (p && typeof p.catch === 'function') p.catch(() => {});
+  } catch {
+    /* ignore */
+  }
+}

@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, type CSSProperties } from 'react';
 import { describe, modeInfo } from '../../engine/modes';
 import type { Segment, Snapshot, WorkoutConfig } from '../../engine/types';
 import { formatClock, formatClockString } from '../../lib/format';
@@ -16,6 +16,27 @@ interface Props {
   natural: boolean;
   onRepeat: () => void;
   onHome: () => void;
+}
+
+const CONFETTI_COLORS = ['var(--work)', 'var(--rest)', 'var(--prep)', 'var(--done)', 'var(--mode-fortime)', 'var(--mode-tabata)'];
+
+/** A short, CSS-only burst behind the badge (hidden with reduced motion). */
+function Confetti() {
+  return (
+    <div className="confetti" aria-hidden="true">
+      {Array.from({ length: 30 }, (_, i) => {
+        const angle = (i * 360) / 30 + ((i * 37) % 11) - 5;
+        const style = {
+          '--a': `${angle}deg`,
+          '--r': `${90 + ((i * 53) % 90)}px`,
+          '--s': `${(i % 2 ? 1 : -1) * (240 + ((i * 71) % 300))}deg`,
+          '--d': `${(i * 23) % 140}ms`,
+          '--c': CONFETTI_COLORS[i % CONFETTI_COLORS.length],
+        } as CSSProperties;
+        return <span key={i} className="confetti__p" style={style} />;
+      })}
+    </div>
+  );
 }
 
 export function FinishSummary({ config, snap, segments, completed, natural, onRepeat, onHome }: Props) {
@@ -46,6 +67,7 @@ export function FinishSummary({ config, snap, segments, completed, natural, onRe
     <section className="summary" aria-labelledby="summary-title">
       <div className="summary__left">
         <div className="summary__hero">
+          {completed && !capped && <Confetti />}
           <div className={`summary__badge${completed ? '' : ' is-partial'}`} aria-hidden="true">
             {completed ? <IconCheck size={30} /> : <IconStop size={24} />}
           </div>

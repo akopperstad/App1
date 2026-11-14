@@ -26,7 +26,19 @@ export type IconName =
   | 'save'
   | 'flame'
   | 'calendar'
-  | 'pulse';
+  | 'pulse'
+  | 'trophy'
+  | 'share'
+  | 'sparkle'
+  | 'mode-amrap'
+  | 'mode-emom'
+  | 'mode-fortime'
+  | 'mode-tabata'
+  | 'mode-interval'
+  | 'mode-deathby'
+  | 'mode-custom'
+  | 'mode-countdown'
+  | 'mode-stopwatch';
 
 const paths: Record<IconName, ReactNode> = {
   back: <path d="M15 5l-7 7 7 7" />,
@@ -127,7 +139,86 @@ const paths: Record<IconName, ReactNode> = {
     </>
   ),
   pulse: <path d="M2.5 12h4l2.5-6.5 5 13 2.5-6.5h5" />,
+  share: (
+    <>
+      <path d="M12 3.5v11.5" />
+      <path d="M8 7l4-3.5L16 7" />
+      <path d="M8.5 10.5H7a2 2 0 0 0-2 2V19a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-6.5a2 2 0 0 0-2-2h-1.5" />
+    </>
+  ),
+  trophy: (
+    <>
+      <path d="M7 4h10v5a5 5 0 0 1-10 0z" />
+      <path d="M7 6H4.5v1.5A3.5 3.5 0 0 0 8 11M17 6h2.5v1.5A3.5 3.5 0 0 1 16 11" />
+      <path d="M12 14v3.5M8.5 20.5h7M9.5 20.5l.5-3h4l.5 3" />
+    </>
+  ),
+  sparkle: <path d="M12 3l1.8 5.2L19 10l-5.2 1.8L12 17l-1.8-5.2L5 10l5.2-1.8zM19 16l.7 1.8 1.8.7-1.8.7L19 21l-.7-1.8-1.8-.7 1.8-.7z" />,
+
+  /* ---- mode glyphs: one distinctive mark per timer ---- */
+  // AMRAP — infinity: keep going, as many rounds as possible.
+  'mode-amrap': (
+    <path d="M12 12c-1.9-2.6-3.6-4-5.5-4a4 4 0 0 0 0 8c1.9 0 3.6-1.4 5.5-4zm0 0c1.9 2.6 3.6 4 5.5 4a4 4 0 0 0 0-8c-1.9 0-3.6 1.4-5.5 4z" />
+  ),
+  // EMOM — a dial with the minute hand on the top of the minute.
+  'mode-emom': (
+    <>
+      <circle cx="12" cy="12" r="8.5" />
+      <path d="M12 12V6.5" />
+      <path d="M12 12l3.2 1.8" />
+      <circle cx="12" cy="12" r="0.6" fill="currentColor" />
+      <path d="M12 1.8v1.4" />
+    </>
+  ),
+  // For Time — a stopwatch with speed lines.
+  'mode-fortime': (
+    <>
+      <circle cx="14.5" cy="13.5" r="7" />
+      <path d="M14.5 10v3.5l2 1.5M12.5 3.5h4M14.5 3.5v3" />
+      <path d="M2 10.5h4M3 14h2.5M2 17.5h4.5" />
+    </>
+  ),
+  // Tabata — alternating tall / short bars (20 on, 10 off).
+  'mode-tabata': <path d="M4 19.5V6M8 19.5V13M12 19.5V6M16 19.5V13M20 19.5V6" />,
+  // Intervals — a square wave.
+  'mode-interval': <path d="M2 16.5h3.5V7.5h6v9h3v-9h6v9H22" />,
+  // Death By — a staircase that keeps climbing.
+  'mode-deathby': (
+    <>
+      <path d="M3 20.5h4.5V16H12v-4.5h4.5V7H21" />
+      <path d="M17.5 3.5H21V7" />
+    </>
+  ),
+  // Custom — stacked blocks of different lengths.
+  'mode-custom': (
+    <>
+      <rect x="3" y="4" width="18" height="4.5" rx="1.6" />
+      <rect x="3" y="10.5" width="11" height="4.5" rx="1.6" />
+      <rect x="3" y="17" width="14.5" height="3.5" rx="1.6" />
+    </>
+  ),
+  // Countdown — hourglass.
+  'mode-countdown': (
+    <>
+      <path d="M6 3h12M6 21h12" />
+      <path d="M7.5 3c0 4.5 4.5 6 4.5 9s-4.5 4.5-4.5 9M16.5 3c0 4.5-4.5 6-4.5 9s4.5 4.5 4.5 9" />
+      <path d="M9.5 18.5h5" />
+    </>
+  ),
+  // Stopwatch — classic stopwatch with crown.
+  'mode-stopwatch': (
+    <>
+      <circle cx="12" cy="13.5" r="7.5" />
+      <path d="M12 13.5V9.5M9.5 2.5h5M12 2.5V6M18.2 6.8l1.6-1.6" />
+    </>
+  ),
 };
+
+/** Glyph for a timer mode ("amrap" → "mode-amrap"). */
+export function modeIcon(mode: string): IconName {
+  const name = `mode-${mode}` as IconName;
+  return name in paths ? name : 'timer';
+}
 
 export interface IconProps extends Omit<SVGProps<SVGSVGElement>, 'name'> {
   name: IconName;

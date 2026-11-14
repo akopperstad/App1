@@ -53,22 +53,65 @@
   --ph-soft: var(--done-soft);
 }
 
+.run {
+  /* Derived phase tokens. "ink" = foreground accent on the current surface,
+     "fill" / "on" = filled controls (play, start) and their icon colour. */
+  --ph-ink: var(--ph);
+  --ph-fill: var(--ph);
+  --ph-on: var(--fg-on-accent);
+  --ph-glow: var(--ph);
+  --surface: var(--bg);
+  font-family: var(--font);
+}
+
 .run > * {
   position: relative;
   z-index: 1;
 }
 
+/* Dark: OLED black with a deep phase-coloured light source at the top and a
+   faint floor glow — the colour reads instantly, the panel stays dark. */
 .run__bg {
   position: absolute !important;
   inset: 0;
   z-index: 0 !important;
   pointer-events: none;
   background:
-    radial-gradient(80% 55% at 50% 42%, var(--ph-soft), transparent 72%),
-    linear-gradient(180deg, var(--ph-soft) 0%, transparent 45%, transparent 60%, var(--ph-soft) 100%);
+    radial-gradient(120% 60% at 50% -8%, color-mix(in srgb, var(--ph) 38%, transparent), transparent 70%),
+    radial-gradient(90% 40% at 50% 112%, color-mix(in srgb, var(--ph) 22%, transparent), transparent 70%),
+    radial-gradient(70% 45% at 50% 45%, var(--ph-soft), transparent 75%);
+  transition: opacity 400ms var(--ease);
 }
 .run[data-status='paused'] .run__bg {
-  opacity: 0.45;
+  opacity: 0.35;
+}
+.run[data-status='idle'] .run__bg {
+  opacity: 0.7;
+}
+:root[data-theme='light'] .run__bg {
+  background:
+    radial-gradient(120% 60% at 50% -8%, color-mix(in srgb, var(--ph) 22%, transparent), transparent 70%),
+    radial-gradient(70% 45% at 50% 45%, var(--ph-soft), transparent 75%);
+}
+
+/* Final-seconds heartbeat: one soft pulse of light per second (keyed in Run.tsx). */
+.run__beat {
+  position: absolute !important;
+  inset: 0;
+  z-index: 0 !important;
+  pointer-events: none;
+  background: radial-gradient(75% 55% at 50% 45%, color-mix(in srgb, var(--ph) 45%, transparent), transparent 70%);
+  animation: run-beat 900ms var(--ease-out) both;
+}
+@keyframes run-beat {
+  0% {
+    opacity: 1;
+    transform: scale(0.92);
+  }
+  100% {
+    opacity: 0;
+    transform: scale(1.08);
+  }
 }
 
 .run__flash {
@@ -228,7 +271,7 @@
   font-weight: 900;
   letter-spacing: 0.06em;
   text-transform: uppercase;
-  color: var(--ph);
+  color: var(--ph-ink);
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -264,7 +307,7 @@
   stroke: var(--line-strong);
 }
 .mini-ring__arc {
-  stroke: var(--ph);
+  stroke: var(--ph-ink);
   stroke-linecap: round;
   stroke-dasharray: 100 100;
 }
@@ -308,7 +351,7 @@
   opacity: 0.45;
 }
 .ring__arc {
-  stroke: var(--ph);
+  stroke: var(--ph-ink);
   stroke-width: 3.6;
   stroke-linecap: round;
   stroke-dasharray: 100 100;
@@ -346,7 +389,7 @@
   margin-left: 0.04em;
 }
 .clock.is-final {
-  color: var(--ph);
+  color: var(--ph-ink);
 }
 .clock.is-final .clock__digits {
   animation: final-pulse 1s var(--ease) both;
@@ -416,7 +459,7 @@
 }
 .seg-bar__fill {
   height: 100%;
-  background: var(--ph);
+  background: var(--ph-ink);
   border-radius: inherit;
   transform-origin: left center;
   transform: scaleX(0);
@@ -639,7 +682,7 @@
   overflow: hidden;
   min-width: 0;
   background: var(--ph-soft);
-  border: 2px solid var(--ph);
+  border: 2px solid var(--ph-ink);
 }
 .tile--rounds:active:not(:disabled) {
   background: var(--ph-soft);
@@ -671,7 +714,7 @@
   display: inline-flex;
   align-items: center;
   gap: 4px;
-  color: var(--ph);
+  color: var(--ph-ink);
   font-size: var(--fs-lg);
   font-weight: 900;
   text-transform: uppercase;
@@ -727,7 +770,7 @@
   text-transform: uppercase;
   letter-spacing: 0.06em;
   background: var(--ph-soft);
-  border: 2px solid var(--ph);
+  border: 2px solid var(--ph-ink);
 }
 .tile__badge {
   position: absolute;
@@ -742,12 +785,12 @@
   font-weight: 900;
   text-transform: uppercase;
   letter-spacing: 0.06em;
-  background: var(--ph);
+  background: var(--ph-fill);
   border-color: transparent;
-  color: var(--fg-on-accent);
+  color: var(--ph-on);
 }
 .tile--next:active {
-  background: var(--ph) !important;
+  background: var(--ph-fill) !important;
   filter: brightness(1.1);
 }
 .adjust {
@@ -775,9 +818,9 @@
   border-radius: 50%;
   display: grid;
   place-items: center;
-  background: var(--ph);
-  color: var(--fg-on-accent);
-  box-shadow: 0 12px 36px -8px color-mix(in srgb, var(--ph) 60%, transparent);
+  background: var(--ph-fill);
+  color: var(--ph-on);
+  box-shadow: 0 12px 36px -8px color-mix(in srgb, var(--ph-glow) 60%, transparent);
   transition: transform 120ms var(--ease);
 }
 .transport__play:active {
@@ -788,7 +831,7 @@
 }
 @keyframes play-breathe {
   50% {
-    box-shadow: 0 0 0 14px color-mix(in srgb, var(--ph) 22%, transparent);
+    box-shadow: 0 0 0 14px color-mix(in srgb, var(--ph-glow) 22%, transparent);
   }
 }
 .transport__side {
@@ -872,8 +915,8 @@
   width: 100%;
   min-height: 88px;
   border-radius: var(--r-pill);
-  background: var(--ph);
-  color: var(--fg-on-accent);
+  background: var(--ph-fill);
+  color: var(--ph-on);
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -882,7 +925,7 @@
   font-weight: 900;
   letter-spacing: 0.1em;
   text-transform: uppercase;
-  box-shadow: 0 16px 44px -12px color-mix(in srgb, var(--ph) 70%, transparent);
+  box-shadow: 0 16px 44px -12px color-mix(in srgb, var(--ph-glow) 70%, transparent);
   transition: transform 120ms var(--ease);
 }
 .start:active {
@@ -1306,10 +1349,10 @@
 }
 .btn--primary,
 .btn--primary:hover:not(:disabled) {
-  background: var(--ph);
-  color: var(--fg-on-accent);
+  background: var(--ph-fill);
+  color: var(--ph-on);
   font-weight: 800;
-  box-shadow: 0 8px 28px -10px color-mix(in srgb, var(--ph) 75%, transparent);
+  box-shadow: 0 8px 28px -10px color-mix(in srgb, var(--ph-glow) 75%, transparent);
 }
 /* Dialogs are portalled outside .run, so they use the mode accent like the rest of the app. */
 .run-sheet .btn--primary,
@@ -1375,6 +1418,378 @@
   .clock.is-final .clock__digits,
   .run[data-status='paused'] .clock,
   .transport__play.is-paused {
+    animation: none;
+  }
+}
+
+/* ==================================================================
+   Pulse 2 — hero clock refinements
+   ================================================================== */
+
+.clock,
+.rounds__count,
+.stats__cell dd,
+.summary__time,
+.stat-card__value,
+.splits__split {
+  font-family: var(--font-display);
+}
+.clock {
+  font-weight: 800;
+  letter-spacing: -0.03em;
+  text-shadow: 0 2px 24px color-mix(in srgb, var(--ph) 18%, transparent);
+}
+.phase__label {
+  font-family: var(--font-display);
+  font-weight: 900;
+}
+
+/* Ring: thicker arc with a soft glow so it reads from across the room. */
+.ring__arc {
+  stroke-width: 4.2;
+  filter: drop-shadow(0 0 1.6px color-mix(in srgb, var(--ph-ink) 55%, transparent));
+}
+.ring__track {
+  stroke-width: 4.2;
+}
+
+/* Paused: chip, desaturated stage, breathing play button. */
+.chip--paused {
+  background: var(--fg);
+  color: var(--surface);
+  box-shadow: 0 6px 18px -6px rgba(0, 0, 0, 0.45);
+}
+.run[data-status='paused'] .ring__arc,
+.run[data-status='paused'] .phase__label {
+  opacity: 0.55;
+}
+
+/* Portrait tablets: keep the control deck a comfortable thumb-width, centred. */
+@media (max-aspect-ratio: 5/4) and (min-width: 600px) {
+  .run__side {
+    width: 100%;
+    max-width: 560px;
+    margin: 0 auto;
+  }
+  .run__body {
+    padding-bottom: var(--s-6);
+  }
+}
+
+/* ---------------------------------------------------------- light: bold surface
+ * In light theme a running workout turns the whole screen into the phase
+ * colour — the gym-clock convention, legible at a glance from across a room.
+ * Local tokens are re-pointed so every child (ring, stats, buttons) adapts.
+ */
+:root[data-theme='light'] .run:is([data-status='running'], [data-status='paused']) {
+  --surface: var(--ph);
+  --on-ph: #ffffff;
+  --fg: var(--on-ph);
+  --fg-2: color-mix(in srgb, var(--on-ph) 86%, transparent);
+  --fg-3: color-mix(in srgb, var(--on-ph) 72%, transparent);
+  --line: color-mix(in srgb, var(--on-ph) 22%, transparent);
+  --line-strong: color-mix(in srgb, var(--on-ph) 34%, transparent);
+  --bg-elev: color-mix(in srgb, var(--on-ph) 14%, transparent);
+  --bg-elev-2: color-mix(in srgb, var(--on-ph) 16%, transparent);
+  --bg-press: color-mix(in srgb, var(--on-ph) 28%, transparent);
+  --ph-soft: color-mix(in srgb, var(--on-ph) 24%, transparent);
+  --ph-ink: var(--on-ph);
+  --ph-fill: var(--on-ph);
+  --ph-on: var(--ph);
+  --ph-glow: #000;
+  --focus: var(--on-ph);
+  background: var(--ph);
+  color: var(--fg);
+}
+/* Get ready is amber: dark ink reads better than white on yellow. */
+:root[data-theme='light'] .run:is([data-status='running'], [data-status='paused'])[data-phase='prep'] {
+  --on-ph: #241a00;
+}
+/* Paused: the colour drains to a muted slate so "stopped" is obvious from afar. */
+:root[data-theme='light'] .run[data-status='paused'] {
+  background: color-mix(in srgb, var(--ph) 38%, #4a4d55);
+}
+:root[data-theme='light'] .run[data-status='paused'][data-phase='prep'] {
+  --on-ph: #ffffff;
+}
+:root[data-theme='light'] .run:is([data-status='running'], [data-status='paused']) .run__bg {
+  background:
+    radial-gradient(110% 55% at 50% -10%, rgba(255, 255, 255, 0.22), transparent 70%),
+    radial-gradient(90% 45% at 50% 115%, rgba(0, 0, 0, 0.14), transparent 70%);
+  opacity: 1;
+}
+:root[data-theme='light'] .run:is([data-status='running'], [data-status='paused']) .clock {
+  text-shadow: 0 3px 30px rgba(0, 0, 0, 0.12);
+}
+:root[data-theme='light'] .run:is([data-status='running'], [data-status='paused']) .clock.is-final {
+  color: var(--on-ph);
+}
+:root[data-theme='light'] .run .run__beat {
+  background: radial-gradient(75% 55% at 50% 45%, rgba(255, 255, 255, 0.4), transparent 70%);
+}
+:root[data-theme='light'] .run__flash {
+  background: #fff !important;
+}
+:root[data-theme='light'] .run:is([data-status='running'], [data-status='paused']) .ring__ticks {
+  stroke: var(--on-ph);
+  opacity: 0.35;
+}
+:root[data-theme='light'] .run:is([data-status='running'], [data-status='paused']) .overall__seg {
+  background: var(--on-ph);
+}
+:root[data-theme='light'] .run:is([data-status='running'], [data-status='paused']) .overall__seg--rest {
+  background: color-mix(in srgb, var(--on-ph) 55%, transparent);
+}
+:root[data-theme='light'] .run:is([data-status='running'], [data-status='paused']) .overall__layer--dim {
+  opacity: 0.3;
+}
+:root[data-theme='light'] .run:is([data-status='running'], [data-status='paused']) .stats__cell,
+:root[data-theme='light'] .run:is([data-status='running'], [data-status='paused']) .splits {
+  background: color-mix(in srgb, var(--on-ph) 13%, transparent);
+  border-color: transparent;
+}
+:root[data-theme='light'] .run:is([data-status='running'], [data-status='paused']) .transport__side,
+:root[data-theme='light'] .run:is([data-status='running'], [data-status='paused']) .tile,
+:root[data-theme='light'] .run:is([data-status='running'], [data-status='paused']) .pill {
+  border-color: color-mix(in srgb, var(--on-ph) 28%, transparent);
+}
+:root[data-theme='light'] .run:is([data-status='running'], [data-status='paused']) .transport__play {
+  box-shadow: 0 14px 34px -10px rgba(0, 0, 0, 0.35);
+}
+:root[data-theme='light'] .run:is([data-status='running'], [data-status='paused']) .splits__row.is-fast .splits__split,
+:root[data-theme='light'] .run:is([data-status='running'], [data-status='paused']) .splits__row.is-slow .splits__split {
+  color: var(--on-ph);
+}
+:root[data-theme='light'] .run:is([data-status='running'], [data-status='paused']) .splits__tag {
+  color: var(--surface) !important;
+  background: var(--on-ph) !important;
+}
+:root[data-theme='light'] .run:is([data-status='running'], [data-status='paused']) .hold__fill {
+  background: #000;
+  opacity: 0.25;
+}
+
+/* ---------------------------------------------------------- focus ("big clock") mode
+ * Tap the clock to hide everything but the time, the phase and the transport.
+ */
+.stage {
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+.run[data-status='idle'] .stage,
+.run[data-status='finished'] .stage {
+  cursor: default;
+}
+.run__top,
+.run__side > * {
+  transition: opacity var(--dur-slow) var(--ease);
+}
+.run[data-focus] .run__title,
+.run[data-focus] .info,
+.run[data-focus] .utility,
+.run[data-focus] .kbd-hint,
+.run[data-focus] .stage__info {
+  display: none;
+}
+.run[data-focus] .overall {
+  opacity: 0.5;
+}
+.run[data-focus] .clock {
+  --clock-size: calc(min(100cqw, 100cqh) * 0.84 / var(--em));
+}
+@container main (aspect-ratio > 1.25) {
+  .run[data-focus] .clock {
+    --clock-size: min(88cqh, calc(98cqw / var(--em)));
+  }
+}
+@media (min-aspect-ratio: 5/4) {
+  .run[data-focus] .run__side {
+    width: auto;
+    min-width: 0;
+  }
+  .run[data-focus] .transport {
+    grid-template-columns: auto;
+    grid-template-rows: auto auto auto;
+    gap: var(--s-3);
+  }
+  .run[data-focus] .actions {
+    flex-direction: column;
+    max-width: 200px;
+  }
+}
+.icon-btn[aria-pressed='true'] {
+  color: var(--fg);
+  background: var(--bg-elev-2);
+}
+
+/* ---------------------------------------------------------- touch polish */
+.icon-btn:active,
+.transport__side:active:not(:disabled),
+.transport__play:active,
+.tile:active:not(:disabled),
+.pill:active:not(:disabled),
+.start:active {
+  transition-duration: var(--dur-fast);
+}
+.transport__play,
+.transport__side,
+.tile,
+.start,
+.pill,
+.icon-btn {
+  transition:
+    transform var(--dur-slow) var(--ease-spring),
+    background-color var(--dur) var(--ease),
+    color var(--dur) var(--ease),
+    opacity var(--dur) var(--ease),
+    box-shadow var(--dur) var(--ease);
+}
+.transport__play {
+  background-image: linear-gradient(160deg, rgba(255, 255, 255, 0.22), rgba(255, 255, 255, 0) 60%);
+}
+.transport__play:active {
+  transform: scale(0.92);
+}
+.start {
+  background-image: linear-gradient(180deg, rgba(255, 255, 255, 0.18), rgba(255, 255, 255, 0) 60%);
+  font-family: var(--font-display);
+}
+.pill {
+  min-height: 52px;
+}
+.icon-btn:hover {
+  background: transparent;
+}
+@media (hover: hover) {
+  .icon-btn:hover {
+    background: var(--bg-elev-2);
+  }
+}
+
+/* ---------------------------------------------------------- finish celebration (CSS only) */
+.confetti {
+  position: absolute;
+  left: 50%;
+  top: 32px;
+  width: 0;
+  height: 0;
+  pointer-events: none;
+  z-index: 0;
+}
+.confetti__p {
+  position: absolute;
+  left: -4px;
+  top: -6px;
+  width: 8px;
+  height: 12px;
+  border-radius: 2px;
+  background: var(--c, var(--done));
+  opacity: 0;
+  animation: confetti-burst 1500ms cubic-bezier(0.15, 0.7, 0.3, 1) var(--d, 0ms) both;
+}
+.confetti__p:nth-child(3n) {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+}
+.confetti__p:nth-child(4n + 1) {
+  width: 4px;
+  height: 14px;
+}
+@keyframes confetti-burst {
+  0% {
+    opacity: 1;
+    transform: rotate(var(--a)) translateY(0) rotate(0deg) scale(0.6);
+  }
+  70% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+    transform: rotate(var(--a)) translateY(calc(-1 * var(--r, 120px))) rotate(var(--s, 360deg)) scale(1);
+  }
+}
+.summary__hero {
+  position: relative;
+}
+.summary__badge {
+  position: relative;
+  z-index: 1;
+  width: 76px;
+  height: 76px;
+  background: var(--done);
+  background-image: linear-gradient(160deg, rgba(255, 255, 255, 0.25), rgba(255, 255, 255, 0) 60%);
+  box-shadow:
+    0 0 0 10px var(--done-soft),
+    0 0 0 22px color-mix(in srgb, var(--done) 7%, transparent),
+    0 16px 40px -12px var(--done);
+  animation: badge-pop 700ms var(--ease-spring) both;
+}
+.summary__badge::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  border: 2px solid var(--done);
+  animation: badge-ring 1200ms var(--ease-out) 150ms both;
+}
+.summary__badge.is-partial::after {
+  display: none;
+}
+.summary__badge.is-partial {
+  background-image: none;
+  box-shadow: 0 0 0 10px var(--bg-elev);
+}
+@keyframes badge-ring {
+  0% {
+    opacity: 0.9;
+    transform: scale(1);
+  }
+  100% {
+    opacity: 0;
+    transform: scale(2.6);
+  }
+}
+.summary__time {
+  font-weight: 800;
+  background: linear-gradient(180deg, var(--fg) 30%, color-mix(in srgb, var(--fg) 70%, var(--done)));
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  animation: summary-rise 600ms var(--ease-out) 120ms both;
+}
+.summary__time .summary__tenths {
+  -webkit-text-fill-color: var(--fg-2);
+}
+@keyframes summary-rise {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+}
+.stat-card {
+  box-shadow: var(--hi);
+}
+:root[data-theme='light'] .stat-card,
+:root[data-theme='light'] .run:is([data-status='idle'], [data-status='finished']) .splits,
+:root[data-theme='light'] .run:is([data-status='idle'], [data-status='finished']) .stats__cell,
+:root[data-theme='light'] .overview__chip {
+  background: var(--bg-elev);
+  border-color: transparent;
+  box-shadow: var(--shadow-1);
+}
+.run[data-status='finished'] .run__bg {
+  opacity: 0.8;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .confetti,
+  .run__beat,
+  .summary__badge::after {
+    display: none;
+  }
+  .summary__time,
+  .summary__badge {
     animation: none;
   }
 }

@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Status-bar notification icon: white silhouette of the Pulse dial + pulse line. -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="24dp"
+    android:height="24dp"
+    android:viewportWidth="512"
+    android:viewportHeight="512">
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M226,60h60a10,10 0,0 1,10 10v10a10,10 0,0 1,-10 10h-21v26h-18v-26h-21a10,10 0,0 1,-10 -10v-10a10,10 0,0 1,10 -10z" />
+    <path
+        android:strokeColor="#FFFFFF"
+        android:strokeWidth="38"
+        android:strokeLineCap="round"
+        android:pathData="M256,132A160,160 0,1 1,96 292" />
+    <path
+        android:strokeColor="#FFFFFF"
+        android:strokeWidth="30"
+        android:strokeLineCap="round"
+        android:strokeLineJoin="round"
+        android:pathData="M150,300L205,300L230,250L262,352L292,226L318,300L362,300" />
+</vector>

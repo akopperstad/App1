@@ -1,6 +1,6 @@
 import './ui.css';
 
-export { Icon, type IconName } from './Icon';
+export { Icon, modeIcon, type IconName } from './Icon';
 export { Button, IconButton, type ButtonVariant } from './Button';
 export { TopBar } from './TopBar';
 export { Stepper, clamp } from './Stepper';

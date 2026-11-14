@@ -3,7 +3,8 @@ import { modeInfo } from '../engine/modes';
 import type { Mode, WorkoutConfig } from '../engine/types';
 import { useNav } from '../nav';
 import { lastConfigStore, presetsStore, rememberConfig, savePreset, usePresets } from '../state/store';
-import { Button, Icon, Sheet, TopBar } from '../components/ui';
+import { Button, Icon, Sheet, TopBar, modeIcon } from '../components/ui';
+import { ShareButton } from '../features/shareActions';
 import { ModeForm } from './configure/forms';
 import { problems, sanitize } from './configure/sanitize';
 import { startWorkout } from './configure/start';
@@ -21,6 +22,7 @@ function clone<T>(v: T): T {
 
 export function Configure({ mode, initial }: ConfigureProps) {
   const nav = useNav();
+  const imported = nav.route.name === 'configure' && !!nav.route.imported;
   const info = modeInfo(mode);
   const presets = usePresets();
 
@@ -85,11 +87,18 @@ export function Configure({ mode, initial }: ConfigureProps) {
   return (
     <div className="ui-page cfg" style={{ '--accent': info.accent } as CSSProperties}>
       <div className="ui-page__inner">
-        <TopBar title={<span className="cfg__bar-title">{info.title}</span>} />
+        <TopBar title={<span className="cfg__bar-title">{info.title}</span>} right={<ShareButton config={config} />} />
 
         <header className="cfg__hero">
+          {imported && (
+            <p className="cfg__imported" role="status">
+              <Icon name="share" size={16} /> Imported workout — review it, then start or save.
+            </p>
+          )}
           <span className="cfg__eyebrow">
-            <span className="cfg__dot" aria-hidden />
+            <span className="ui-glyph cfg__glyph" aria-hidden>
+              <Icon name={modeIcon(mode)} size={16} strokeWidth={2.4} />
+            </span>
             {config.name ? info.title : 'Timer'}
             {preset && <span className="cfg__badge">Saved</span>}
           </span>

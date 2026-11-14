@@ -1,4 +1,6 @@
+import { KeepAwake } from '@capacitor-community/keep-awake';
 import { useEffect } from 'react';
+import { isNative, quietly } from '../native/platform';
 
 /*
  * Keep the screen awake while a timer runs.
@@ -7,6 +9,8 @@ import { useEffect } from 'react';
  *   whenever the page is hidden, so we re-acquire on visibilitychange.
  * - Fallback for browsers without it (older iOS Safari): a tiny muted,
  *   looping, inline <video> keeps the display on while it plays.
+ * - Native app: the KeepAwake plugin (FLAG_KEEP_SCREEN_ON /
+ *   isIdleTimerDisabled), which survives backgrounding by itself.
  */
 
 // 2 s, 16x16 black H.264 clip used by the wake-lock fallback (generated with ffmpeg).
@@ -69,7 +73,12 @@ function stopVideo(): void {
 /** CONTRACT: keep the screen awake while `active` is true (re-acquires on visibility change). */
 export function useWakeLock(active: boolean): void {
   useEffect(() => {
-    if (!active || typeof document === 'undefined') return;
+    if (!active) return;
+    if (isNative()) {
+      quietly(() => KeepAwake.keepAwake());
+      return () => quietly(() => KeepAwake.allowSleep());
+    }
+    if (typeof document === 'undefined') return;
     let disposed = false;
     let sentinel: Sentinel | null = null;
     let requesting = false;

@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import type { TimerEngine } from '../../engine/engine';
 import type { Snapshot } from '../../engine/types';
+import { onAppResume } from '../../native/app';
 
 /** Per-frame painters (ring, progress bars) that write to the DOM directly, bypassing React. */
 export interface FrameBus {
@@ -93,6 +94,11 @@ export function useTimer(engine: TimerEngine, keyOf: (s: Snapshot) => string, bu
       }
     };
     document.addEventListener('visibilitychange', onVis);
+    // Native app: tick at once on resume (the web view may not fire visibilitychange).
+    const offResume = onAppResume(() => {
+      update();
+      schedule();
+    });
 
     publish(engine.snapshot(), true);
     schedule();
@@ -103,6 +109,7 @@ export function useTimer(engine: TimerEngine, keyOf: (s: Snapshot) => string, bu
       window.clearInterval(iv);
       unsub();
       document.removeEventListener('visibilitychange', onVis);
+      offResume();
     };
   }, [engine, bus]);
 

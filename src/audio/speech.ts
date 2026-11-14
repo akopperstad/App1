@@ -1,6 +1,16 @@
+import { QueueStrategy, TextToSpeech } from '@capacitor-community/text-to-speech';
+import { isNative, quietly } from '../native/platform';
+
 /**
  * speechSynthesis wrapper. Guarded for SSR/jsdom; never throws or blocks.
+ *
+ * In the native app speech goes through the platform TTS engine
+ * (AVSpeechSynthesizer / android.speech.tts) instead: speechSynthesis in
+ * WKWebView is unreliable (silent after backgrounding, missing voices), and
+ * the native engines mix with / briefly duck other audio rather than taking
+ * permanent audio focus.
  */
+
 
 let voice: SpeechSynthesisVoice | null = null;
 let voicesHooked = false;
@@ -65,6 +75,7 @@ function ensureVoices(s: SpeechSynthesis): void {
 
 /** Speak an empty utterance inside a user gesture so later speech works on iOS. */
 export function primeSpeech(): void {
+  if (isNative()) return; // native TTS needs no user-gesture unlock
   const s = synth();
   if (!s) return;
   ensureVoices(s);
@@ -79,8 +90,24 @@ export function primeSpeech(): void {
 
 /** Speak a short phrase, replacing anything queued. */
 export function say(text: string, volume = 1): void {
+  if (!text) return;
+  if (isNative()) {
+    const v = Math.min(1, Math.max(0.15, Number.isFinite(volume) ? volume : 1));
+    quietly(() =>
+      TextToSpeech.speak({
+        text,
+        lang: nativeLang(),
+        rate: 1.0,
+        pitch: 1.0,
+        volume: v,
+        category: 'playback',
+        queueStrategy: QueueStrategy.Flush,
+      }),
+    );
+    return;
+  }
   const s = synth();
-  if (!s || !text) return;
+  if (!s) return;
   ensureVoices(s);
   try {
     if (s.speaking || s.pending) s.cancel();
@@ -104,6 +131,10 @@ export function say(text: string, volume = 1): void {
 }
 
 export function stopSpeech(): void {
+  if (isNative()) {
+    quietly(() => TextToSpeech.stop());
+    return;
+  }
   const s = synth();
   if (!s) return;
   try {

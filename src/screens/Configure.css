@@ -29,6 +29,26 @@
   background: var(--accent);
   box-shadow: 0 0 12px var(--accent);
 }
+.cfg__glyph {
+  --g: 28px;
+}
+.cfg__imported {
+  display: flex;
+  align-items: center;
+  gap: var(--s-2);
+  margin: 0 0 var(--s-4);
+  padding: var(--s-3) var(--s-4);
+  border-radius: var(--r-md);
+  background: color-mix(in srgb, var(--accent) 12%, var(--bg-elev));
+  border: 1px solid color-mix(in srgb, var(--accent) 30%, transparent);
+  color: var(--fg);
+  font-size: var(--fs-sm);
+  font-weight: 600;
+}
+.cfg__imported svg {
+  flex: none;
+  color: var(--accent-ink, var(--accent));
+}
 .cfg__badge {
   padding: 2px 8px;
   border-radius: var(--r-pill);
@@ -36,7 +56,8 @@
   letter-spacing: 0.08em;
 }
 .cfg__title {
-  margin: var(--s-1) 0 0;
+  margin: var(--s-2) 0 0;
+  font-family: var(--font-display);
   font-size: var(--fs-2xl);
   font-weight: 900;
   letter-spacing: -0.035em;
@@ -70,6 +91,7 @@
   min-width: 0;
 }
 .cfg-summary__big {
+  font-family: var(--font-display);
   font-size: 3.25rem;
   font-weight: 900;
   letter-spacing: -0.04em;
@@ -88,6 +110,7 @@
   text-align: right;
 }
 .cfg-summary__countnum {
+  font-family: var(--font-display);
   font-size: var(--fs-xl);
   font-weight: 800;
   line-height: 1;
@@ -96,14 +119,15 @@
 .cfg-timeline {
   margin-top: var(--s-5);
   display: flex;
-  gap: 2px;
-  height: 14px;
+  gap: 3px;
+  height: 16px;
   border-radius: var(--r-pill);
   overflow: hidden;
 }
 .cfg-timeline__b {
   flex-basis: 0;
   min-width: 2px;
+  border-radius: 3px;
   background: var(--work);
   transition: flex-grow 300ms var(--ease);
 }
@@ -252,8 +276,9 @@
   position: relative;
   padding: var(--s-3) var(--s-3) var(--s-2) var(--s-4);
   border-radius: var(--r-lg);
-  background: var(--bg-elev);
+  background: var(--card);
   border: 1px solid var(--line);
+  box-shadow: var(--hi);
   overflow: hidden;
 }
 .cfg-step.is-rest {
@@ -418,7 +443,17 @@
   z-index: 30;
   padding: var(--s-3) calc(var(--s-4) + var(--safe-right)) calc(var(--s-3) + var(--safe-bottom))
     calc(var(--s-4) + var(--safe-left));
-  background: linear-gradient(to top, var(--bg) 55%, color-mix(in srgb, var(--bg) 0%, transparent));
+  background: linear-gradient(to top, var(--bg) 58%, color-mix(in srgb, var(--bg) 0%, transparent));
+}
+:root[data-theme='light'] .cfg-step,
+:root[data-theme='light'] .cfg-ladder__step {
+  border-color: transparent;
+  box-shadow: var(--shadow-1);
+}
+:root[data-theme='light'] .cfg-bar__row .ui-btn--secondary {
+  background: #fff;
+  border-color: transparent;
+  box-shadow: var(--shadow-2);
 }
 .cfg-bar__inner {
   position: relative;

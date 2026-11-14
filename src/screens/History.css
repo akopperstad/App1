@@ -263,3 +263,196 @@
   max-width: 300px;
   color: var(--fg-2);
 }
+
+/* ---------- weekly chart (features) ---------- */
+.hist-chart {
+  margin: var(--s-4) 0 0;
+  padding: var(--s-3) var(--s-4) var(--s-2);
+  border-radius: var(--r-md);
+  background: var(--bg-elev);
+  border: 1px solid var(--line);
+}
+.hist-chart__head {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: var(--s-2);
+  margin-bottom: var(--s-1);
+}
+.hist-chart__title {
+  font-size: var(--fs-xs);
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--fg-3);
+}
+.hist-chart__sum {
+  font-size: var(--fs-xs);
+  font-weight: 700;
+  color: var(--fg-2);
+}
+.hist-chart__svg {
+  display: block;
+  width: 100%;
+  height: auto;
+  overflow: visible;
+}
+.hist-chart__grid {
+  stroke: var(--line);
+  stroke-width: 1;
+  stroke-dasharray: 3 4;
+}
+.hist-chart__base {
+  stroke: var(--line-strong);
+  stroke-width: 1;
+}
+.hist-chart__axis,
+.hist-chart__label {
+  fill: var(--fg-3);
+  font-size: 9.5px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+.hist-chart__bar rect {
+  fill: color-mix(in srgb, var(--work) 42%, var(--bg-elev));
+  transition: fill var(--dur) var(--ease);
+}
+.hist-chart__bar.is-current rect {
+  fill: var(--work);
+}
+.hist-chart__bar rect.hist-chart__empty {
+  fill: var(--line);
+}
+.hist-chart__bar:hover rect:not(.hist-chart__empty) {
+  fill: color-mix(in srgb, var(--work) 75%, var(--bg-elev));
+}
+.hist-chart__value {
+  fill: var(--fg);
+  font-size: 10.5px;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+}
+
+/* ---------- mode filter chips (features) ---------- */
+.hist-filter {
+  display: flex;
+  gap: var(--s-2);
+  margin: var(--s-4) calc(-1 * var(--s-4)) 0;
+  padding: 2px var(--s-4);
+  overflow-x: auto;
+  scrollbar-width: none;
+  -webkit-overflow-scrolling: touch;
+}
+.hist-filter::-webkit-scrollbar {
+  display: none;
+}
+.hist-chip {
+  --accent: var(--fg);
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 36px;
+  padding: 0 14px;
+  border-radius: var(--r-pill);
+  border: 1px solid var(--line);
+  background: var(--bg-elev);
+  color: var(--fg-2);
+  font-size: var(--fs-sm);
+  font-weight: 700;
+  white-space: nowrap;
+  transition:
+    background-color var(--dur) var(--ease),
+    color var(--dur) var(--ease),
+    border-color var(--dur) var(--ease);
+}
+.hist-chip:hover {
+  background: var(--bg-elev-2);
+}
+.hist-chip.is-active {
+  color: var(--fg);
+  border-color: color-mix(in srgb, var(--accent) 55%, var(--line));
+  background: color-mix(in srgb, var(--accent) 16%, var(--bg-elev));
+}
+.hist-chip__dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--accent);
+}
+.hist-filter__empty {
+  margin: var(--s-5) 0 0;
+  text-align: center;
+  color: var(--fg-3);
+  font-size: var(--fs-sm);
+}
+
+/* ---------- personal records (features) ---------- */
+.hist-records {
+  margin-top: var(--s-5);
+}
+.hist-records__list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+  gap: var(--s-2);
+}
+.hist-record {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  grid-template-areas:
+    'icon name'
+    'value value'
+    'meta meta';
+  align-items: center;
+  column-gap: var(--s-2);
+  row-gap: 2px;
+  padding: var(--s-3);
+  border-radius: var(--r-md);
+  border: 1px solid var(--line);
+  background:
+    linear-gradient(160deg, color-mix(in srgb, var(--accent) 14%, transparent), transparent 65%),
+    var(--bg-elev);
+  min-width: 0;
+}
+.hist-record__icon {
+  grid-area: icon;
+  display: grid;
+  place-items: center;
+  width: 24px;
+  height: 24px;
+  border-radius: 8px;
+  color: var(--accent);
+  background: color-mix(in srgb, var(--accent) 18%, transparent);
+}
+.hist-record__name {
+  grid-area: name;
+  font-weight: 700;
+  font-size: var(--fs-sm);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.hist-record__value {
+  grid-area: value;
+  margin-top: var(--s-1);
+  font-size: var(--fs-xl);
+  font-weight: 900;
+  letter-spacing: -0.03em;
+  line-height: 1.1;
+}
+.hist-record__meta {
+  grid-area: meta;
+  font-size: var(--fs-xs);
+  color: var(--fg-3);
+  font-weight: 600;
+}
+
+/* ---------- PR badge (features) ---------- */
+.hist-badge.is-pr {
+  color: var(--fg-on-accent);
+  background: linear-gradient(135deg, var(--prep), var(--work));
+  letter-spacing: 0.04em;
+}
