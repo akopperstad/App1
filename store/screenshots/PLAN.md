@@ -1,6 +1,6 @@
 # Pulse: screenshot storyboard and specs
 
-Status: **plan only.** Produce the final images once the UI design is frozen.
+Status: **produced** (see "Regenerating" at the end). Re-render after any UI change.
 The Play feature graphic is already done: `store/graphics/feature-graphic.png`
 (source `store/graphics/src/feature-graphic.html`, render with
 `node store/graphics/render.cjs`).
@@ -92,3 +92,40 @@ allowed. The beeps are a strong hook; consider a 20 s Tabata preview later.
 - Keep captions inside the top 22% and away from the outer 4% (store UIs round corners
   and crop slightly in some placements).
 - Export without alpha (`page.screenshot({ omitBackground: false })`, JPEG 92 or PNG).
+
+## Regenerating
+
+The images are rendered from the real app (Vite dev server) with Playwright, seeded
+data and a frozen clock, then composed into marketing frames:
+
+```sh
+npx vite --port 5230 --strictPort &          # serve the app
+node store/screenshots/render.cjs            # all platforms × locales (~10 min)
+node store/screenshots/check.cjs             # sizes, RGB/no alpha, counts
+kill %1
+```
+
+Options: `--locales en-US,nb-NO`, `--platforms ios-6.9,play-phone`, `--only home,tabata`
+(raw shot ids or frame slugs), `--reuse-raw` (skip app captures, recompose frames only),
+`--raw-only`.
+
+- `src/data.cjs`: seed history/presets/settings, localized workout names, **captions**
+  (`**word**` = coral highlight), and "now" (Thu 12 Nov 2026 18:40, Europe/Oslo).
+- `render.cjs`: platforms (canvas px, device CSS viewport, status-bar inset, scale),
+  storyboards, capture recipes (`SHOTS`), lock-screen texts (taken from the app's own
+  notification planner, `src/native/schedule.ts`), composition and contact sheets.
+- `src/frame.html`: the frame template (background, auto-fitting caption, generic device
+  bezel, neutral 9:41 status bar, lock screen).
+- Raw app captures land in `store/screenshots/.raw/` (scratch, not for the stores).
+- Output: `<platform>/<locale>/<NN>-<slug>.png` and `overview-<locale>.png` (review only).
+
+What was produced vs. the storyboard above:
+- Phones: frames 1–8 as planned; iOS also gets a 9th, "Every finish, every split"
+  (finish summary with confetti). Play phone gets 8 (Play's maximum).
+- Frame 4 shows the landscape run screen on a phone turned 90° so the clock fills the frame.
+- Frame 3 (locked) is a composed lock screen: blurred run screen + two notifications whose
+  texts come from the app's notification planner in each language.
+- Frame 7 uses the History "For Time" filter: PR card, yesterday's PR entry, and an earlier
+  attempt expanded with its round splits (the 8-week chart is shown on tablets).
+- Frame 8 is scrolled so the "Play over music" hint (which names a third-party app) is out of frame.
+- Tablets (iPad 13", Play 7" and 10"): 6 landscape frames as planned.
