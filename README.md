@@ -1,33 +1,99 @@
 # Pulse — Workout Timer
 
-A fast, offline-capable workout timer (installable PWA) built for the gym: readable from across the room, accurate to the millisecond, with beeps, voice and vibration cues.
+A workout timer built for the gym floor: giant digits readable from across the
+room, cues you hear over your music, and timing that never drifts. One
+Vite/React/TypeScript code base ships as an installable, fully offline **PWA**
+and, through **Capacitor 8**, as native **iOS** and **Android** apps.
 
-## Timers
+## Features
+
+**Timers**
+
 | Mode | What it does |
 |---|---|
-| **AMRAP** | Count-down block(s), multiple AMRAPs with rest between, tap-to-count rounds with splits |
+| **AMRAP** | Count-down block(s), several AMRAPs with rest between, tap-to-count rounds with splits |
 | **EMOM / E2MOM / E1:30…** | Any interval length, rotating movements (incl. "Rest" minutes) |
-| **For Time** | Count-up with optional time cap, target rounds (auto-finishes on the last), laps |
+| **For Time** | Count-up with optional time cap and target rounds (auto-finishes on the last), laps |
 | **Tabata** | 20/10 × 8 by default, multiple sets with set rest |
 | **Intervals** | Any work/rest, rounds, sets, rest between sets, rotating movements |
 | **Death By** | Rep target grows each interval; tracks rounds survived |
-| **Custom** | Build any sequence of timed or untimed ("tap when done") steps, repeated N rounds |
-| **Countdown** | Simple timer with ±10s / +1:00 adjustments |
+| **Custom** | Any sequence of timed or untimed ("tap when done") steps, repeated N rounds |
+| **Countdown** | Simple timer with ±10 s / +1:00 adjustments |
 | **Stopwatch** | Count-up with laps, splits, fastest/slowest |
 
-## Highlights
-- **Drift-free engine** — time comes from a monotonic clock, not summed ticks; catches up correctly after backgrounding; every cue fires exactly once.
-- **Cues** — 3-2-1 beeps, "go"/rest tones, halfway / 10-second / minute marks, spoken announcements, vibration, full-screen colour flash.
-- **Get-ready lead-in**, pause/resume, skip/back, hold-to-reset/end, keyboard shortcuts (Space, ←/→, L, R, F, Esc).
-- **Screen wake lock**, fullscreen, portrait + landscape layouts, light/dark themes.
-- **Saved workouts, benchmarks (Cindy, Fran, FGB…), history** with weekly stats, streaks and round splits.
-- Works fully offline once loaded; install to the home screen.
+**Cues**
+- 3-2-1 beeps, go/rest tones, halfway / 10-second / minute marks, full-screen colour flash, vibration / native haptics.
+- **5 sound packs**: Classic, Boxing bell, Whistle, Soft, Digital (synthesised with Web Audio — no audio files).
+- **Spoken announcements** in the app language (native TTS in the apps, Web Speech in the PWA).
+- **Plays over music** (iOS audio session mixes with Spotify / Apple Music; setting "Play over music").
+- **Background cues in the native apps**: when the phone is locked mid-workout, a local notification with sound fires at every work/rest change, cancelled when you return.
+
+**Everything else**
+- **5 languages**: English, Norsk (bokmål), Deutsch, Español, Français — UI, spoken cues and store listings.
+- Drift-free engine (monotonic clock, catches up after backgrounding, every cue fires exactly once).
+- Get-ready lead-in, pause/resume, skip/back, hold-to-end, keyboard shortcuts (Space, ←/→, L, R, F, Esc).
+- Screen wake lock, portrait + landscape, phone + tablet, light/dark/system theme.
+- Saved workouts, built-in benchmarks, history with splits and personal records, weekly chart and streaks.
+- **Sharing**: any workout becomes a compact link (`https://<host>/w/#w=<code>`); the landing page in `site/w/` previews it and opens the app via `pulsetimer://import?w=<code>` (or directly with Universal Links / App Links, opt-in).
+- **Backup**: export everything as a JSON file and restore it (merged, no duplicates; settings optional), history as CSV.
+- No account, no ads, no tracking, no network calls. All data stays on the device.
 
 ## Develop
+
 ```bash
-npm install
-npm run dev       # start dev server
-npm test          # 137 unit tests (engine timing, cues, storage, run screen)
-npm run build     # production build in dist/
+npm ci
+npm run dev          # Vite dev server
+npm test             # vitest: 228 tests in 17 files (engine timing, cues, i18n, storage, sharing, backup, native shims, screens)
+npx tsc -p .         # type check
+npm run build        # production web build -> dist/
+npm run store:check  # store listing field limits (store/listing/*.md)
 ```
-Stack: Vite, React 19, TypeScript, plain CSS. No runtime dependencies beyond React.
+
+Stack: Vite, React 19, TypeScript, plain CSS. Runtime dependencies are React
+plus the Capacitor plugins (which are inert on the web).
+
+| Path | Contents |
+|---|---|
+| `src/engine/` | Workout compiler + drift-free timer engine (pure TS, heavily tested) |
+| `src/audio/` | Web Audio sound packs, cue player, speech |
+| `src/i18n/` | Translations (en, nb, de, es, fr) and spoken phrases |
+| `src/features/` | Sharing, backup/restore, records, settings sections |
+| `src/native/` | Everything Capacitor: platform detection, background cues, audio session, status bar, back button, deep links |
+| `android/`, `ios/` | Native projects (generated by Capacitor, then customised — committed) |
+| `site/` | Static website: landing, privacy, terms, support, `w/` share-link page, `.well-known/` templates |
+| `store/` | Store metadata, listings in 5 languages, graphics, screenshot plan, `check-limits.mjs` |
+| `docs/RELEASE.md` | Step-by-step release guide and pre-release checklist |
+
+## Native apps
+
+```bash
+npm run cap:sync        # web build + copy into ios/ and android/ + plugin sync (run after every web change)
+npm run android:build   # debug APK  -> android/app/build/outputs/apk/debug/app-debug.apk
+npm run android:release # release AAB -> android/app/build/outputs/bundle/release/app-release.aab
+npm run android:open    # open in Android Studio
+npm run ios:open        # sync + open Xcode (Mac only); plugins via Swift Package Manager
+```
+
+Requirements: Node 22+, JDK 21 and the Android SDK (platform 36) for Android;
+Xcode 16+ on macOS for iOS. Android needs `android/local.properties`
+(`sdk.dir=/path/to/android-sdk`, gitignored) unless `ANDROID_HOME` is set.
+
+Native builds need the public share host at build time so share links don't
+point at `localhost`:
+
+```bash
+VITE_SHARE_ORIGIN=https://pulse.example.com/w/ npm run cap:sync
+```
+
+Optional verified App Links on Android: `./gradlew assembleRelease -PpulseShareHost=pulse.example.com`
+(see [docs/RELEASE.md](docs/RELEASE.md#5-deep-links)).
+
+CI (`.github/workflows/mobile.yml`) checks store listing limits, type-checks,
+tests and builds the web app, builds an Android debug APK and compiles the iOS
+app unsigned on every push.
+
+## Releasing
+
+- [docs/RELEASE.md](docs/RELEASE.md) — accounts, signing, store consoles, deep links, the pre-release and real-device checklists, and what you must do yourself.
+- [store/](store/) — `metadata.md` (store fields, privacy answers), `listing/<locale>.md` (copy), `graphics/`, `screenshots/PLAN.md`.
+- [site/](site/) — host on any static host; it provides the privacy policy / support URLs the stores require and the share-link landing page.

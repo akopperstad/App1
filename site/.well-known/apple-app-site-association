@@ -1,0 +1,13 @@
+{
+  "applinks": {
+    "details": [
+      {
+        "appIDs": ["TODO_TEAMID.com.pulsetimer.app"],
+        "components": [
+          { "/": "/w/*", "comment": "Shared workouts: https://<share host>/w/#w=<code>" },
+          { "/": "/w", "comment": "Same, without the trailing slash" }
+        ]
+      }
+    ]
+  }
+}

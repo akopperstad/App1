@@ -23,11 +23,14 @@ Inside the apps the page origin is `capacitor://localhost` (iOS) /
 the hosted PWA**. Set it at build time, e.g. in `.env.production`:
 
 ```bash
-VITE_SHARE_ORIGIN=https://pulse.example.com/
+VITE_SHARE_ORIGIN=https://pulse.example.com/w/
 ```
 
-Without it, links created in the apps point at `localhost` and won't open for
-anyone else. The PWA build doesn't need it (it uses its own address).
+Point it at the `w/` folder of the hosted `site/` (the share-link landing page,
+which previews the workout and has an "Open in Pulse" button), or at the hosted
+PWA if you host that instead — both understand `#w=<code>`. Without it, links
+created in the apps point at `localhost` and won't open for anyone else. The
+PWA build doesn't need it (it uses its own address).
 
 ---
 
@@ -45,8 +48,11 @@ control, e.g. `com.yourstudio.pulse`, then change it in **all** of:
 | `android/app/src/main/res/values/strings.xml` | `package_name`, `custom_url_scheme` |
 | `android/app/src/main/java/com/pulsetimer/app/MainActivity.java` | `package` line — and move the file to the matching folder |
 | `ios/App/App.xcodeproj/project.pbxproj` | both `PRODUCT_BUNDLE_IDENTIFIER` lines (or Xcode → target App → Signing & Capabilities) |
+| `site/.well-known/assetlinks.json`, `site/.well-known/apple-app-site-association` | `package_name` / `appIDs` (only if you enable App Links / Universal Links, section 5) |
+| `store/metadata.md` | "Bundle / application id" row |
 
-Then `npm run cap:sync`, and `grep -r pulsetimer android ios capacitor.config.ts` should only show your new id.
+Then `npm run cap:sync`, and `grep -rn "com\.pulsetimer\.app" android/app/src android/app/build.gradle ios/App/App ios/App/App.xcodeproj capacitor.config.ts site store`
+should print nothing. (The **URL scheme** `pulsetimer://` is independent of the app id; keep it.)
 
 ### Accounts
 
@@ -211,52 +217,191 @@ native functionality up front.
 
 ---
 
-## 3. Optional: open share links directly in the app (Universal Links / App Links)
 
-The apps already handle incoming links: `appUrlOpen` and the launch URL are
-passed to `openShared()` (src/native/useDeepLinks.ts), which imports any URL
-containing `#w=…` and ignores everything else. To make `https://pulse.example.com/#w=…`
-links open the installed app instead of the browser:
+## 3. Host the website (`site/`)
 
-**Android App Links**
-1. Add to the `MainActivity` `<activity>` in `android/app/src/main/AndroidManifest.xml`:
-   ```xml
-   <intent-filter android:autoVerify="true">
-       <action android:name="android.intent.action.VIEW" />
-       <category android:name="android.intent.category.DEFAULT" />
-       <category android:name="android.intent.category.BROWSABLE" />
-       <data android:scheme="https" android:host="pulse.example.com" />
-   </intent-filter>
-   ```
-2. Host `https://pulse.example.com/.well-known/assetlinks.json` with your package
-   name and the **Play App Signing** SHA-256 fingerprint (Play Console → Setup →
-   App signing; it shows a ready-made assetlinks.json).
+`site/` is plain static HTML (no build step): landing page, `privacy.html`,
+`terms.html`, `support.html`, the share-link page `w/index.html` and the
+`.well-known/` deep-link templates. Both stores require a public **privacy
+policy URL** and a **support URL**, so this must be online before you submit.
 
-**iOS Universal Links**
-1. Xcode → target App → Signing & Capabilities → **+ Associated Domains** →
-   `applinks:pulse.example.com` (this adds an entitlements file).
-2. Host `https://pulse.example.com/.well-known/apple-app-site-association`
-   (JSON, no extension, `application/json`):
-   ```json
-   { "applinks": { "details": [ { "appIDs": ["TEAMID.com.yourstudio.pulse"], "components": [ { "/": "/*" } ] } ] } }
-   ```
+1. Fill in the TODOs: `grep -rn TODO site/` (developer legal name, contact /
+   privacy email, postal address, hosting provider + log retention, store URLs
+   and badges once the apps are live, Smart App Banner `app-id`).
+2. Deploy the folder as-is to any static host — GitHub Pages, Netlify,
+   Cloudflare Pages, S3 + CloudFront… — on HTTPS, ideally on your own domain.
+   `site/.nojekyll` keeps GitHub Pages from hiding `.well-known/`.
+3. Build the native apps with `VITE_SHARE_ORIGIN=https://<your-domain>/w/`
+   (see the top of this file) and open one share link from the app on a phone
+   that does **not** have Pulse installed: you should see the workout preview.
+4. Put `https://<your-domain>/privacy.html` into **App Store Connect → App
+   Privacy → Privacy Policy URL** and **Play Console → App content → Privacy
+   policy**; `https://<your-domain>/support.html` into the App Store "Support
+   URL" (and the Play store listing "Website").
 
-Note: the `#w=` fragment is never sent to the server, so any path works; the
-app receives the full URL. Skip this section and links simply open the PWA.
+---
 
 ## 4. Pre-release checklist
 
-- [ ] App id changed everywhere (section 0) and `npm run cap:sync` run.
-- [ ] `VITE_SHARE_ORIGIN` set to the public PWA URL for native builds.
-- [ ] Version / versionCode / build number bumped.
-- [ ] `npx tsc -p . && npx vitest run && npm run build` pass.
-- [ ] On a real iPhone and Android phone:
-  - [ ] Start a Tabata, lock the phone: a notification + sound arrives at each change and "Time!" at the end; unlocking cancels the rest.
-  - [ ] Notification permission prompt appears on first start only.
-  - [ ] Beeps and voice play over Spotify/Apple Music without stopping it ("Play over music" on); turning it off makes Pulse take over audio.
-  - [ ] Haptics on countdown / work / rest / finish.
-  - [ ] Screen stays on while a timer runs.
-  - [ ] Android back button: goes back a screen; on Home it backgrounds the app.
-  - [ ] Light and dark theme: status bar icons readable; splash colour matches.
-  - [ ] Rotation works on phone and tablet; nothing under the notch / home indicator.
-- [ ] Store listings, screenshots, privacy answers filled in.
+Do these in order; the first three are permanent or slow, start them first.
+
+- [ ] **App id** chosen and changed everywhere (section 0, table) → `npm run cap:sync`; the grep in section 0 prints nothing.
+- [ ] **Display name collision check.** App Store names are unique: search App Store Connect (create the app record early — it reserves the name) and the stores for "Pulse"; there are many. The listing title "Pulse: WOD & Interval Timer" is what users see, but the *home-screen name* (`CFBundleDisplayName` in `ios/App/App/Info.plist`, `app_name` in `android/app/src/main/res/values/strings.xml`, `appName` in `capacitor.config.ts`) is "Pulse". If you rename, also update `store/listing/*.md` and run `npm run store:check`.
+- [ ] **Accounts** exist; Play **closed test with 12 testers × 14 days** started if you are a new personal account (section 0).
+- [ ] **Contact details / TODOs** filled: `grep -rn TODO site/ store/metadata.md` — support email, privacy email, developer / seller name, address, copyright line, marketing / support / privacy URLs, share-link host.
+- [ ] **Website hosted** (section 3) and reachable over HTTPS; `VITE_SHARE_ORIGIN` set for native builds.
+- [ ] **Privacy policy URL** entered in both consoles; App Privacy = *Data Not Collected*, Play Data safety = *No data collected / shared*.
+- [ ] **Screenshots** captured per `store/screenshots/PLAN.md` and saved in `store/screenshots/` (iPhone 6.9" + 6.5", iPad 13", Android phone; optionally per language). Feature graphic: `store/graphics/feature-graphic.png`; Play icon: `android/store-assets/play-icon-512.png`.
+- [ ] **Listing copy** pasted from `store/listing/<locale>.md` for all 5 locales; `npm run store:check` passes.
+- [ ] **Version** bumped: `package.json` `version`, Android `versionCode`, iOS *Build* (section 0).
+- [ ] **Signing**: Android upload keystore made and backed up (1.1); Xcode Team selected (2.1).
+- [ ] **Exact alarm declaration** in Play Console (1.5); review notes pasted in App Store Connect (2.5).
+- [ ] **Deep links**: scheme works on both platforms (section 5); App Links / Universal Links only if you set them up.
+- [ ] `npx tsc -p . && npx vitest run && npm run build && npm run store:check` pass; CI green.
+- [ ] **Real-device test checklist** (section 6) done on at least one iPhone and one Android 14+ phone, from a TestFlight / Play internal-testing build (not just a debug build).
+
+---
+
+## 5. Deep links
+
+Share links look like `https://<share host>/w/#w=<code>` (`src/features/share.ts`).
+Three ways a link reaches the app — all end in `normalizeDeepLink()`
+(`src/native/deepLinks.ts`, tested in `src/native/nativeUi.test.ts`), which
+turns them into `#w=<code>` for `openShared()`; anything else is ignored.
+
+### 5.1 Custom URL scheme `pulsetimer://` (on by default)
+
+- `pulsetimer://import?w=<code>` — the form the "Open in Pulse" button on
+  `site/w/` uses (query, because some launchers and in-app browsers drop `#…`).
+  `pulsetimer://import#w=<code>` and percent-encoded codes work too.
+- iOS: `CFBundleURLTypes` in `ios/App/App/Info.plist`; `SceneDelegate.swift`
+  forwards `openURLContexts` to Capacitor → `App` `appUrlOpen`.
+- Android: `VIEW` / `BROWSABLE` / `DEFAULT` intent-filter
+  (`scheme="pulsetimer" host="import"`) on `MainActivity`, which is
+  `launchMode="singleTask"`, so a link opened while the app runs reuses it.
+- Cold start: `App.getLaunchUrl()`; while running: `appUrlOpen`
+  (`src/native/app.ts` `onDeepLink`, deduplicated).
+
+Test without a website:
+
+```bash
+# Android (device/emulator with the app installed)
+adb shell am start -a android.intent.action.VIEW -d "pulsetimer://import?w=<code>"
+# iOS simulator
+xcrun simctl openurl booted "pulsetimer://import?w=<code>"
+```
+
+Get a `<code>` from "Share workout" in the app (the part after `#w=`).
+
+### 5.2 Android App Links (opt-in)
+
+Lets `https://<share host>/w/…` open the app directly, without the landing page.
+
+1. Build with the host (no scheme, no path):
+   ```bash
+   cd android && ./gradlew bundleRelease -PpulseShareHost=pulse.example.com
+   # or: PULSE_SHARE_HOST=pulse.example.com, or pulseShareHost=… in android/gradle.properties
+   ```
+   This merges `android/app/src/applinks/AndroidManifest.xml` — an
+   `autoVerify="true"` intent-filter for `https://<host>` with path prefix
+   `/w`. Without the property, no https filter is added at all (so the app
+   never offers itself for links it can't verify).
+2. Edit `site/.well-known/assetlinks.json`: your package name, and the
+   **Play App Signing** SHA-256 (Play Console → Test and release → Setup → App
+   signing → "App signing key certificate"; that page also shows a ready-made
+   assetlinks.json). Add the upload key's SHA-256 too if you sideload release builds.
+3. Deploy; check `https://<host>/.well-known/assetlinks.json` is served as
+   `application/json` with no redirect. Verify on a device:
+   `adb shell pm get-app-links <your.app.id>` → `verified`.
+
+### 5.3 iOS Universal Links (opt-in, documented only)
+
+Not enabled in the project on purpose: an Associated Domains entitlement makes
+signing fail until the App ID has that capability, which would break a
+first-time "just archive it" release.
+
+1. Apple Developer → Identifiers → your App ID → enable **Associated Domains**
+   (with automatic signing Xcode does this when you add the capability).
+2. Xcode → target App → Signing & Capabilities → **+ Capability → Associated
+   Domains** → `applinks:pulse.example.com`. Xcode creates
+   `ios/App/App/App.entitlements` and sets `CODE_SIGN_ENTITLEMENTS`; commit both.
+   (The unsigned CI build is unaffected: `CODE_SIGNING_ALLOWED=NO`.)
+3. Edit `site/.well-known/apple-app-site-association`: replace
+   `TODO_TEAMID` with your Team ID (developer.apple.com → Membership) and the
+   bundle id. Serve it at `https://<host>/.well-known/apple-app-site-association`
+   — no extension, `Content-Type: application/json`, HTTPS, no redirects.
+   Apple's CDN caches it; changes can take a day.
+4. Test from Notes or Messages (typing the URL into Safari's address bar does
+   not trigger Universal Links). Long-press the link → "Open in Pulse".
+
+The `#w=` fragment is never sent to the server; the app receives the full URL.
+
+---
+
+## 6. Real-device test checklist
+
+Use release-like builds (TestFlight, Play internal testing). Test on at least
+one iPhone (iOS 17+) and one Android 14+ phone; an older Android (10–12) and an
+iPad if you can.
+
+**Audio**
+- [ ] iPhone: start Spotify / Apple Music, then a Tabata: beeps **and** voice play over the music without pausing or ducking it ("Play over music" on).
+- [ ] Turn "Play over music" off mid-session (Settings): next workout, starting the timer takes over audio (music pauses). Turn it back on: mixing returns without restarting the app.
+- [ ] iPhone **silent switch** on: in-app beeps still play (Pulse uses the playback category, like a timer app should). Background notification sounds are silenced by the switch (they vibrate) — expected; note it for support.
+- [ ] Bluetooth headphones / AirPods: cues come through the headphones.
+- [ ] Android: beeps over Spotify/YouTube Music; volume buttons change media volume.
+
+**Background / locked screen**
+- [ ] iPhone: start a Tabata, lock the phone: a notification with sound at every work/rest change, "Time!" at the end. Unlock mid-workout: pending alerts are cancelled, no double beeps, the timer shows the right time.
+- [ ] Same on Android with the screen locked; also with the app swiped to the background (Home).
+- [ ] First workout start asks for notification permission once (Android 13+ / iOS); denying it does not break the timer.
+- [ ] "Background alerts" off in Settings → locking the phone schedules nothing.
+- [ ] Pause, then lock: nothing fires. Long workout (> 64 changes, e.g. 40 × 20/10) locked: alerts keep coming for the first 64 changes (iOS limit; documented).
+- [ ] **Android 14+ exact alarms**: cues arrive on the second (compare with a stopwatch over a 20/10 Tabata). `adb shell dumpsys alarm | grep -A3 <your.app.id>` shows exact `RTC_WAKEUP` alarms. Pulse uses `USE_EXACT_ALARM` (granted at install on 13+); if you removed it per 1.5, check Settings → Apps → Pulse → *Alarms & reminders* and that cues arrive only seconds late when it's off.
+- [ ] **Doze**: lock the phone, then `adb shell dumpsys deviceidle force-idle` and keep the workout running: cues still fire (alarms are `allowWhileIdle`). Afterwards `adb shell dumpsys deviceidle unforce`. Also try a vendor with aggressive battery management (Samsung, Xiaomi) with battery saver on, and note any delays.
+- [ ] Kill the app mid-workout (swipe away): no stray notifications keep firing after the next launch.
+
+**Voice & language**
+- [ ] Switch the app to **Norsk** and **Deutsch** (and es / fr): spoken cues use a voice of that language, not an English voice reading Norwegian. If the phone lacks the voice, install it (iOS: Settings → Accessibility → Spoken Content → Voices; Android: Settings → System → Text-to-speech → install voice data) and note the fallback behaviour.
+- [ ] Background-cue notifications (titles like "Rest — 0:10", the "Workout cues" Android channel) — **currently English-only** (`src/native/schedule.ts`, `background.ts`); check they read acceptably, or localise them before launch.
+
+**System UI & navigation**
+- [ ] Light and dark theme: status bar and Android navigation bar icons are readable on every screen, including the Run screen filled with the phase colour in light theme (white icons there), and they switch back after leaving Run.
+- [ ] Android back: one screen back; on Home it backgrounds the app.
+- [ ] Rotation on phone and tablet; nothing under the notch / Dynamic Island / home indicator / gesture bar.
+- [ ] Splash colour matches the theme; no white flash at launch.
+- [ ] Screen stays on while a timer runs; haptics on countdown / work / rest / finish.
+
+**Sharing & data**
+- [ ] Share a workout from the app: the link contains your domain (not `localhost`), opens the landing page on a phone without Pulse, and "Open in Pulse" imports it on a phone with Pulse (both platforms, from Messages / WhatsApp / Mail).
+- [ ] `adb shell am start … pulsetimer://import?w=…` / `xcrun simctl openurl …` with the app closed (cold start) and open.
+- [ ] Backup export → delete app → reinstall → restore: workouts and history come back.
+
+---
+
+## 7. What you must do yourself
+
+Things no code change can do for you, with rough time estimates.
+
+| Task | Where | Time |
+|---|---|---|
+| Choose the final app id and display name; change it (section 0) | repo | 30 min |
+| Enrol in the Apple Developer Program (organisations: D-U-N-S first) | developer.apple.com | 1 h of work, 1–7 days waiting |
+| Create the Google Play developer account + identity verification | play.google.com/console | 1 h, 1–3 days waiting |
+| New personal Play account: recruit 12 testers, run the closed test | Play Console | 30 min setup, **14 days** waiting |
+| Domain + static hosting for `site/`, fill its TODOs, deploy | your host / registrar | 1–2 h |
+| Fill `store/metadata.md` TODOs (seller name, address, emails, URLs) | repo | 20 min |
+| Generate and back up the Android upload keystore | your machine + password manager | 15 min |
+| App Store Connect app record, App Privacy, age rating, pricing, review notes | App Store Connect | 1–2 h |
+| Play Console app, App content forms (privacy, data safety, rating, audience, exact-alarm declaration) | Play Console | 1–2 h |
+| Screenshots for each device class (and per language, optional) | simulators / phones | 2–4 h (+1–2 h per extra language) |
+| Paste listing copy for 5 locales, check with `npm run store:check` | both consoles | 1–2 h |
+| Real-device test checklist (section 6) on iPhone + Android | phones | 2–3 h |
+| Archive + upload iOS build, TestFlight, submit | Mac with Xcode | 1 h + review 1–3 days |
+| Build + upload AAB, internal → closed → production | Play Console | 1 h + review 1–7 days |
+| Optional: App Links / Universal Links (section 5.2 / 5.3) | consoles + host | 1–2 h |
+| Optional: record a 15–30 s app preview video | phone | 2 h |
+
+Total hands-on time is roughly **2–3 working days**, spread over **2–3 weeks**
+of calendar time (account verification, the Play closed-test requirement and
+store review dominate).

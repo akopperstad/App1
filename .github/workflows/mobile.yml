@@ -9,13 +9,30 @@ concurrency:
   group: mobile-${{ github.ref }}
   cancel-in-progress: true
 
+# Action majors are the Node 24 generation (checkout/setup-node/setup-java/
+# upload-artifact v5, setup-gradle v5); GitHub retires the Node 20 runtime.
+
 jobs:
+  store:
+    name: Store listings & site — limits
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 22
+      - name: Listing field lengths (App Store / Google Play)
+        run: node store/check-limits.mjs
+      - name: Deep-link association files are valid JSON
+        run: |
+          node -e "for (const f of ['site/.well-known/apple-app-site-association','site/.well-known/assetlinks.json']) JSON.parse(require('fs').readFileSync(f,'utf8'))"
+
   web:
     name: Web — test & build
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
         with:
           node-version: 22
           cache: npm
@@ -23,7 +40,7 @@ jobs:
       - run: npx tsc -p .
       - run: npx vitest run
       - run: npm run build
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v5
         with:
           name: web-dist
           path: dist
@@ -34,12 +51,12 @@ jobs:
     needs: web
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
         with:
           node-version: 22
           cache: npm
-      - uses: actions/setup-java@v4
+      - uses: actions/setup-java@v5
         with:
           distribution: temurin
           java-version: 21
@@ -48,13 +65,13 @@ jobs:
           # Default installs the removed 'tools' package and fails; the runner
           # image already ships the SDK, so just ensure platform-tools.
           packages: 'platform-tools'
-      - uses: gradle/actions/setup-gradle@v4
+      - uses: gradle/actions/setup-gradle@v5
       - run: npm ci
       - run: npm run cap:sync
       - name: Build debug APK
         working-directory: android
         run: ./gradlew assembleDebug -PversionCode=${{ github.run_number }}
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v5
         with:
           name: pulse-debug-apk
           path: android/app/build/outputs/apk/debug/*.apk
@@ -65,8 +82,8 @@ jobs:
     needs: web
     runs-on: macos-15
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
         with:
           node-version: 22
           cache: npm

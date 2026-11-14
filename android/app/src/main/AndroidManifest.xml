@@ -25,6 +25,21 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
 
+            <!-- Shared-workout deep links: pulsetimer://import?w=<code> (or #w=<code>).
+                 Opened by the "Open in Pulse" button on site/w/. launchMode singleTask
+                 (above) delivers them to the running activity -> App "appUrlOpen".
+                 Parsed by src/native/deepLinks.ts. -->
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <data android:scheme="pulsetimer" android:host="import" />
+            </intent-filter>
+
+            <!-- Verified App Links for https://<share host>/w/ are opt-in: build with
+                 -PpulseShareHost=your-domain (or PULSE_SHARE_HOST) and the filter in
+                 src/applinks/AndroidManifest.xml is merged in. See docs/RELEASE.md. -->
+
         </activity>
 
         <provider

@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Opt-in Android App Links for shared workouts (https://<share host>/w/#w=<code>).
+
+  Only merged when the build is given a host:
+      ./gradlew assembleRelease -PpulseShareHost=pulse.example.com
+  or  PULSE_SHARE_HOST=pulse.example.com ./gradlew ...
+  (see android/app/build.gradle). Without it this file is ignored, so the app
+  never claims https links it cannot verify.
+
+  Verification needs https://<share host>/.well-known/assetlinks.json with this
+  app's package name and the Play App Signing SHA-256 (template:
+  site/.well-known/assetlinks.json). See docs/RELEASE.md, "Deep links".
+-->
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools">
+    <application>
+        <activity android:name=".MainActivity" tools:node="merge">
+            <intent-filter android:autoVerify="true">
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <data android:scheme="https" android:host="${pulseShareHost}" android:pathPrefix="/w" />
+            </intent-filter>
+        </activity>
+    </application>
+</manifest>

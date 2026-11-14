@@ -269,6 +269,34 @@ describe('background cues', () => {
     expect(backgroundCuesArmed()).toBe(false);
   });
 
+  it('Run hook: with background alerts off it never prompts or schedules; turning them on applies at the next arm', async () => {
+    goNative('android');
+    ln.perm = 'granted';
+    settingsStore.set({ ...defaultSettings, backgroundAlerts: false });
+    let t = 0;
+    const engine = new TimerEngine(
+      compile({ mode: 'tabata', workSec: 20, restSec: 10, rounds: 8, sets: 1, restBetweenSetsSec: 0, movements: [] }, 0),
+      { now: () => t },
+    );
+    renderHook(() => useBackgroundCues(engine));
+    await flush();
+    act(() => engine.start());
+    await flush();
+    expect(ln.requestPermissions).not.toHaveBeenCalled();
+    expect(ln.createChannel).not.toHaveBeenCalled();
+    t = 1_000;
+    act(() => app.listeners.get('appStateChange')!({ isActive: false }));
+    await flush();
+    expect(ln.schedule).not.toHaveBeenCalled();
+
+    // Read live from the settings store at arm time.
+    act(() => app.listeners.get('appStateChange')!({ isActive: true }));
+    settingsStore.set({ ...defaultSettings, backgroundAlerts: true });
+    act(() => app.listeners.get('appStateChange')!({ isActive: false }));
+    await flush();
+    expect(ln.schedule).toHaveBeenCalledTimes(1);
+  });
+
   it('Run hook: arms on background while running, disarms on return / pause / unmount', async () => {
     goNative('ios');
     let t = 0;

@@ -1,0 +1,13 @@
+[
+  {
+    "relation": ["delegate_permission/common.handle_all_urls"],
+    "target": {
+      "namespace": "android_app",
+      "package_name": "com.pulsetimer.app",
+      "sha256_cert_fingerprints": [
+        "TODO:PLAY_APP_SIGNING_SHA256 (Play Console > Test and release > Setup > App signing > App signing key certificate)",
+        "TODO:UPLOAD_KEY_SHA256 (optional: keytool -list -v -keystore ~/keys/pulse-upload.jks, for sideloaded release builds)"
+      ]
+    }
+  }
+]

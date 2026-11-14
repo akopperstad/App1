@@ -13,7 +13,8 @@
     "android:build": "npm run cap:sync && cd android && ./gradlew assembleDebug",
     "android:release": "npm run cap:sync && cd android && ./gradlew bundleRelease",
     "android:open": "cap open android",
-    "ios:open": "npm run cap:sync && cap open ios"
+    "ios:open": "npm run cap:sync && cap open ios",
+    "store:check": "node store/check-limits.mjs"
   },
   "dependencies": {
     "@capacitor-community/keep-awake": "8.0.1",

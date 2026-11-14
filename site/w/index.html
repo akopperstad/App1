@@ -102,10 +102,13 @@
   'use strict';
   // ---- configuration (TODO before launch) ---------------------------------
   var STORE = { ios: '#', android: '#' }; // TODO: App Store / Play URLs
-  // Custom URL scheme the native app registers (TODO: not registered yet in
-  // ios/android). With Universal Links / App Links configured for this /w/
-  // path, the OS opens the app directly and this page is never shown.
-  var APP_SCHEME = 'pulse';
+  // Custom URL scheme registered by the native apps (ios/App/App/Info.plist,
+  // android/app/src/main/AndroidManifest.xml; parsed by src/native/deepLinks.ts).
+  // The code goes in the query (?w=), not the fragment: some launchers and
+  // in-app browsers drop "#…" from custom-scheme URLs. With Universal Links /
+  // App Links configured for this /w/ path (docs/RELEASE.md, "Deep links"),
+  // the OS opens the app directly and this page is never shown.
+  var APP_SCHEME = 'pulsetimer';
 
   // ---- decoder: mirrors src/features/share.ts (format v1) + normalize.ts ---
   var PREFIX = '1.', MAX_CODE = 12000, MAX_NAME = 80, MAX_LABEL = 60, MAX_ITEMS = 100, MAX = 7 * 24 * 3600;
@@ -309,7 +312,7 @@
       li.appendChild(a); li.appendChild(el('span', 'd', r.d)); list.appendChild(li);
     });
 
-    $('open').href = APP_SCHEME ? APP_SCHEME + '://import#w=' + encodeURIComponent(code) : '#get';
+    $('open').href = APP_SCHEME ? APP_SCHEME + '://import?w=' + encodeURIComponent(code) : '#get';
   }
 
   // Put the visitor's store first.

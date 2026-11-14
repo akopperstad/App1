@@ -14,6 +14,13 @@ def releaseStoreFile = signingValue('storeFile', 'PULSE_KEYSTORE_FILE')
 // versionName follows package.json "version"; versionCode must go up for every Play upload.
 def appVersionName = new groovy.json.JsonSlurper().parse(rootProject.file('../package.json')).version
 
+// ---------------------------------------------------------------- App Links (opt-in)
+// Host that serves site/w/ (the share-link landing page), e.g. pulse.example.com.
+// Empty (default) -> no https intent-filter at all; only the pulsetimer:// scheme.
+// Set with -PpulseShareHost=... , in gradle.properties, or PULSE_SHARE_HOST.
+def pulseShareHost = ((project.findProperty('pulseShareHost') ?: System.getenv('PULSE_SHARE_HOST') ?: '') as String)
+        .trim().replaceFirst('^https?://', '').replaceAll('/.*$', '')
+
 android {
     namespace = "com.pulsetimer.app"
     compileSdk = rootProject.ext.compileSdkVersion
@@ -24,6 +31,7 @@ android {
         // Bump for every store upload (or pass -PversionCode=N from CI).
         versionCode((project.findProperty('versionCode') ?: '1') as int)
         versionName appVersionName
+        manifestPlaceholders = [pulseShareHost: pulseShareHost ?: 'share-host.invalid']
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
         aaptOptions {
              // Files and dirs to omit from the packaged assets dir, modified to accommodate modern web apps.
@@ -39,6 +47,13 @@ android {
                 keyAlias signingValue('keyAlias', 'PULSE_KEY_ALIAS')
                 keyPassword signingValue('keyPassword', 'PULSE_KEY_PASSWORD')
             }
+        }
+    }
+    if (pulseShareHost) {
+        // Overlay manifest with the autoVerify https filter, for every build type.
+        sourceSets {
+            debug { manifest.srcFile 'src/applinks/AndroidManifest.xml' }
+            release { manifest.srcFile 'src/applinks/AndroidManifest.xml' }
         }
     }
     buildTypes {
