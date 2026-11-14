@@ -1584,7 +1584,9 @@
 .run__side > * {
   transition: opacity var(--dur-slow) var(--ease);
 }
-.run[data-focus] .run__title,
+.run[data-focus] .run__title {
+  visibility: hidden;
+}
 .run[data-focus] .info,
 .run[data-focus] .utility,
 .run[data-focus] .kbd-hint,
@@ -1814,4 +1816,8 @@
   .btn:not(.btn--primary):not(.btn--danger):active:not(:disabled) {
     background: var(--bg-press);
   }
+}
+/* Room for the badge halo inside the scrolling summary. */
+.summary__hero {
+  padding-top: calc(var(--s-5) + 2px);
 }

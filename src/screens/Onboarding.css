@@ -377,3 +377,32 @@
 .onb__slide:nth-child(2) .onb__extra {
   margin-top: var(--s-4);
 }
+
+/* ---------- design pass: short phones (375x667, large text) ---------- */
+/* Slides scroll inside the track; fade the bottom edge instead of a hard cut. */
+.onb__slide {
+  -webkit-mask-image: linear-gradient(to bottom, #000 calc(100% - 28px), transparent);
+  mask-image: linear-gradient(to bottom, #000 calc(100% - 28px), transparent);
+  padding-bottom: var(--s-6);
+}
+.onb__brand,
+.onb__title {
+  font-family: var(--font-display);
+}
+.onb__eyebrow {
+  color: var(--brand);
+}
+@media (max-height: 720px) {
+  .onb__art {
+    width: min(150px, 22vh);
+    margin: 0 0 var(--s-3);
+  }
+  .onb__extra {
+    margin-top: var(--s-4);
+  }
+}
+@media (hover: none) {
+  .onb__skip:hover {
+    background: transparent;
+  }
+}
