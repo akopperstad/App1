@@ -22,7 +22,6 @@ function clone<T>(v: T): T {
 
 export function Configure({ mode, initial }: ConfigureProps) {
   const nav = useNav();
-  const imported = nav.route.name === 'configure' && !!nav.route.imported;
   const info = modeInfo(mode);
   const presets = usePresets();
 
@@ -90,11 +89,6 @@ export function Configure({ mode, initial }: ConfigureProps) {
         <TopBar title={<span className="cfg__bar-title">{info.title}</span>} right={<ShareButton config={config} />} />
 
         <header className="cfg__hero">
-          {imported && (
-            <p className="cfg__imported" role="status">
-              <Icon name="share" size={16} /> Imported workout — review it, then start or save.
-            </p>
-          )}
           <span className="cfg__eyebrow">
             <span className="ui-glyph cfg__glyph" aria-hidden>
               <Icon name={modeIcon(mode)} size={16} strokeWidth={2.4} />

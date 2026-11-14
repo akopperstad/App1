@@ -108,10 +108,10 @@
   --dur-slow: 380ms;
   --press-scale: 0.96;
 
-  --safe-top: env(safe-area-inset-top, 0px);
-  --safe-bottom: env(safe-area-inset-bottom, 0px);
-  --safe-left: env(safe-area-inset-left, 0px);
-  --safe-right: env(safe-area-inset-right, 0px);
+  --safe-top: var(--safe-area-inset-top, env(safe-area-inset-top, 0px));
+  --safe-bottom: var(--safe-area-inset-bottom, env(safe-area-inset-bottom, 0px));
+  --safe-left: var(--safe-area-inset-left, env(safe-area-inset-left, 0px));
+  --safe-right: var(--safe-area-inset-right, env(safe-area-inset-right, 0px));
 
   --tap: 44px;
   --content-max: 560px;
@@ -133,6 +133,8 @@
   --fg-2: #4d535e;
   --fg-3: #6b7079;
   --fg-on-accent: #ffffff;
+  --brand: #e5401c;
+  --brand-2: #d1301a;
 
   /* Deeper, ink-safe phase colours: white text on them passes AA-large. */
   --work: #e5401c;

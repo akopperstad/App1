@@ -77,8 +77,20 @@
   border: 1px solid color-mix(in srgb, var(--accent) 28%, var(--line));
   background:
     radial-gradient(90% 120% at 0% 0%, color-mix(in srgb, var(--accent) 18%, transparent), transparent 65%),
-    var(--bg-elev);
+    var(--card);
+  box-shadow:
+    var(--hi),
+    0 18px 40px -26px color-mix(in srgb, var(--accent) 70%, transparent);
   overflow: hidden;
+}
+:root[data-theme='light'] .cfg-summary {
+  border-color: transparent;
+  background:
+    radial-gradient(90% 120% at 0% 0%, color-mix(in srgb, var(--accent) 12%, transparent), transparent 65%),
+    #fff;
+  box-shadow:
+    var(--shadow-2),
+    0 18px 40px -26px color-mix(in srgb, var(--accent) 60%, transparent);
 }
 .cfg-summary__top {
   display: flex;

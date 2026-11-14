@@ -192,6 +192,6 @@ describe('App wiring', () => {
     const top = (history.state as { stack: Route[] }).stack.at(-1);
     expect(top).toMatchObject({ name: 'configure', mode: 'amrap', imported: true });
     expect(location.hash).toBe('');
-    expect(screen.getByText(/Imported workout/)).toBeTruthy();
+    expect(screen.getAllByText(/Imported workout/).length).toBeGreaterThan(0);
   });
 });

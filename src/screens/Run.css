@@ -367,7 +367,7 @@
 }
 
 .clock {
-  --clock-size: calc(min(100cqw, 100cqh) * 0.76 / var(--em));
+  --clock-size: calc(min(100cqw, 100cqh) * 0.72 / var(--em));
   font-size: var(--clock-size);
   line-height: 0.92;
   font-weight: 800;
@@ -1595,7 +1595,7 @@
   opacity: 0.5;
 }
 .run[data-focus] .clock {
-  --clock-size: calc(min(100cqw, 100cqh) * 0.84 / var(--em));
+  --clock-size: calc(min(100cqw, 100cqh) * 0.8 / var(--em));
 }
 @container main (aspect-ratio > 1.25) {
   .run[data-focus] .clock {
@@ -1791,5 +1791,20 @@
   .summary__time,
   .summary__badge {
     animation: none;
+  }
+}
+
+/* Touch devices: no sticky hover after a tap. */
+@media (hover: none) {
+  .pill:not(.pill--done):hover:not(:disabled) {
+    color: var(--fg-2);
+    background: transparent;
+  }
+  .btn:not(.btn--primary):not(.btn--danger):hover:not(:disabled) {
+    background: var(--bg-elev-2);
+  }
+  .pill:not(.pill--done):active:not(:disabled),
+  .btn:not(.btn--primary):not(.btn--danger):active:not(:disabled) {
+    background: var(--bg-press);
   }
 }
