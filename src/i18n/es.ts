@@ -475,6 +475,7 @@ export const es: Dict = {
   'settings.mix.hintWeb': 'Los pitidos suenan sobre tu app de música; se aplica en la app Pulse para iPhone y Android',
   'settings.bgAlerts': 'Avisos con el móvil bloqueado',
   'settings.bgAlerts.hint': 'Una notificación en cada cambio de fase con el móvil bloqueado',
+  'settings.bgAlerts.denied': 'Las notificaciones de Pulse están desactivadas: actívalas en los Ajustes del sistema',
 
   // ---- background alerts (native notifications)
   'alert.round': '{label} — Ronda {n}/{total}',

@@ -485,6 +485,7 @@ export const en = {
   'settings.mix.hintWeb': 'Beeps play over your music app — applies in the Pulse app for iPhone and Android',
   'settings.bgAlerts': 'Alerts when locked',
   'settings.bgAlerts.hint': 'A notification at each phase change while your phone is locked',
+  'settings.bgAlerts.denied': 'Notifications are off for Pulse — enable them in system Settings',
 
   // ---- background alerts (native notifications)
   'alert.round': '{label} — Round {n}/{total}',

@@ -475,6 +475,7 @@ export const fr: Dict = {
   'settings.mix.hintWeb': 'Les bips passent par-dessus votre app de musique — dans l’app Pulse pour iPhone et Android',
   'settings.bgAlerts': 'Alertes écran verrouillé',
   'settings.bgAlerts.hint': 'Une notification à chaque changement de phase, téléphone verrouillé',
+  'settings.bgAlerts.denied': 'Les notifications de Pulse sont désactivées — activez-les dans les Réglages du système',
 
   // ---- background alerts (native notifications)
   'alert.round': '{label} — Tour {n}/{total}',

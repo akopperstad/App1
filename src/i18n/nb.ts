@@ -475,6 +475,7 @@ export const nb: Dict = {
   'settings.mix.hintWeb': 'Pipene spilles over musikkappen din — gjelder i Pulse-appen for iPhone og Android',
   'settings.bgAlerts': 'Varsler når skjermen er låst',
   'settings.bgAlerts.hint': 'Et varsel ved hvert faseskifte mens telefonen er låst',
+  'settings.bgAlerts.denied': 'Varsler er slått av for Pulse – slå dem på i systeminnstillingene',
 
   // ---- background alerts (native notifications)
   'alert.round': '{label} — Runde {n}/{total}',

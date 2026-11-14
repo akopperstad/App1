@@ -475,6 +475,7 @@ export const de: Dict = {
   'settings.mix.hintWeb': 'Signale laufen über deine Musik-App — gilt in der Pulse-App für iPhone und Android',
   'settings.bgAlerts': 'Hinweise bei Sperre',
   'settings.bgAlerts.hint': 'Eine Mitteilung bei jedem Phasenwechsel, während das Handy gesperrt ist',
+  'settings.bgAlerts.denied': 'Mitteilungen für Pulse sind aus – aktiviere sie in den Systemeinstellungen',
 
   // ---- background alerts (native notifications)
   'alert.round': '{label} — Runde {n}/{total}',

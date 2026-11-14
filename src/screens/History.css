@@ -279,6 +279,14 @@
   background: var(--bg-elev);
   border: 1px solid var(--line);
 }
+.hist-chart {
+  position: relative;
+}
+/* The chart's data table (screen readers only): anchor it so it can't widen the page at large text sizes. */
+.hist-chart > .visually-hidden {
+  left: 0;
+  top: 0;
+}
 .hist-chart__head {
   display: flex;
   justify-content: space-between;
@@ -462,4 +470,60 @@
   color: var(--fg-on-accent);
   background: linear-gradient(135deg, var(--prep), var(--work));
   letter-spacing: 0.04em;
+}
+
+/* ==========================================================================
+   Tablets: a side column (this week, 8-week chart, personal records) that
+   stays in view, next to a wider list column with the filter and sessions.
+   ========================================================================== */
+@media (min-width: 768px) and (min-height: 500px) {
+  .ui-page.hist {
+    --content-max: 1180px;
+  }
+  .hist__layout {
+    display: grid;
+    grid-template-columns: clamp(300px, 36%, 420px) minmax(0, 1fr);
+    column-gap: var(--s-6);
+    align-items: start;
+  }
+  .hist__side {
+    position: sticky;
+    top: calc(var(--safe-top) + 52px);
+    /* Scrolls on its own if it is taller than the screen (short landscape tablets). */
+    max-height: calc(100vh - var(--safe-top) - 52px);
+    max-height: calc(100dvh - var(--safe-top) - 52px);
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    scrollbar-width: none;
+    padding-bottom: var(--s-5);
+    /* Room for focus rings / shadows that would be clipped by the scroller. */
+    margin: 0 calc(-1 * var(--s-1));
+    padding-left: var(--s-1);
+    padding-right: var(--s-1);
+  }
+  .hist__side::-webkit-scrollbar {
+    display: none;
+  }
+  .hist__side .hist-stats {
+    margin-top: var(--s-5);
+  }
+  .hist__side .hist-stat__value {
+    font-size: min(2rem, 24cqi);
+  }
+  .hist__side .hist-chart {
+    padding: var(--s-4) var(--s-4) var(--s-3);
+  }
+  .hist__main {
+    min-width: 0;
+  }
+  .hist__main .hist-filter {
+    margin: var(--s-5) 0 0;
+    padding: 2px 0;
+    flex-wrap: wrap;
+    overflow: visible;
+  }
+  .hist__main .hist-row__main {
+    min-height: 76px;
+    padding-left: var(--s-4);
+  }
 }

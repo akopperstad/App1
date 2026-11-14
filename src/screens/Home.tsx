@@ -165,81 +165,85 @@ export function Home() {
           </nav>
         </header>
 
-        {history.length > 0 && (
-          <button
-            type="button"
-            className="home__week"
-            onClick={() => nav.go({ name: 'history' })}
-            aria-label={tp('home.weekAria', week.count, { min: week.minutes })}
-          >
-            <span className="home__week-stat">
-              <span className="home__week-num num">{week.count}</span>
-              <span className="home__week-cap">
-                {tp('home.weekWorkouts', week.count)}
-                <br />
-                {t('home.weekThis')}
-              </span>
-            </span>
-            <span className="home__week-stat">
-              <span className="home__week-num num">{week.minutes}</span>
-              <span className="home__week-cap">
-                {t('home.weekMinutes')}
-                <br />
-                {t('home.weekTrained')}
-              </span>
-            </span>
-            <span className="home__days" aria-hidden="true">
-              {week.days.map((d) => (
-                <span
-                  key={d.key}
-                  className={`home__day${d.done ? ' is-done' : ''}${d.today ? ' is-today' : ''}${d.future ? ' is-future' : ''}`}
-                  title={d.name}
-                >
-                  <span className="home__day-dot" />
-                  <span className="home__day-l">{d.letter}</span>
+        {recent && (
+          <div className="home__top">
+            {history.length > 0 && (
+              <button
+                type="button"
+                className="home__week"
+                onClick={() => nav.go({ name: 'history' })}
+                aria-label={tp('home.weekAria', week.count, { min: week.minutes })}
+              >
+                <span className="home__week-stat">
+                  <span className="home__week-num num">{week.count}</span>
+                  <span className="home__week-cap">
+                    {tp('home.weekWorkouts', week.count)}
+                    <br />
+                    {t('home.weekThis')}
+                  </span>
                 </span>
-              ))}
-            </span>
-          </button>
+                <span className="home__week-stat">
+                  <span className="home__week-num num">{week.minutes}</span>
+                  <span className="home__week-cap">
+                    {t('home.weekMinutes')}
+                    <br />
+                    {t('home.weekTrained')}
+                  </span>
+                </span>
+                <span className="home__days" aria-hidden="true">
+                  {week.days.map((d) => (
+                    <span
+                      key={d.key}
+                      className={`home__day${d.done ? ' is-done' : ''}${d.today ? ' is-today' : ''}${d.future ? ' is-future' : ''}`}
+                      title={d.name}
+                    >
+                      <span className="home__day-dot" />
+                      <span className="home__day-l">{d.letter}</span>
+                    </span>
+                  ))}
+                </span>
+              </button>
+            )}
+    
+            {recent && recentInfo && (
+              <button
+                type="button"
+                className="home__quick"
+                style={accentStyle(recentInfo.accent)}
+                onClick={() => startWorkout(nav, recent.config)}
+                aria-label={t('home.repeatAria', { name: recentName })}
+              >
+                <span className="home__quick-glow" aria-hidden />
+                <span className="home__quick-top">
+                  <span className="home__eyebrow">
+                    <Icon name="repeat" size={14} strokeWidth={2.4} /> {t('home.quickStart')}
+                  </span>
+                  <span className="home__quick-when">{whenLabel(recent.startedAt, now, tr)}</span>
+                </span>
+                <span className="home__quick-main">
+                  <span className="ui-glyph ui-glyph--solid home__quick-glyph" aria-hidden>
+                    <Icon name={modeIcon(recent.mode)} size={26} strokeWidth={2.2} />
+                  </span>
+                  <span className="home__quick-text">
+                    <span className="home__quick-name">{recentName}</span>
+                    <span className="home__quick-meta num">
+                      {recentName !== recentTitle && `${recentTitle} · `}
+                      {describe(recent.config, tr)}
+                      {recentTotal !== null && recent.config.mode !== 'countdown' && recent.config.mode !== 'amrap'
+                        ? ` · ${formatDuration(recentTotal, tr)}`
+                        : ''}
+                    </span>
+                  </span>
+                  <span className="home__play" aria-hidden>
+                    <Icon name="play" size={26} />
+                  </span>
+                </span>
+              </button>
+            )}
+          </div>
         )}
 
-        {recent && recentInfo && (
-          <button
-            type="button"
-            className="home__quick"
-            style={accentStyle(recentInfo.accent)}
-            onClick={() => startWorkout(nav, recent.config)}
-            aria-label={t('home.repeatAria', { name: recentName })}
-          >
-            <span className="home__quick-glow" aria-hidden />
-            <span className="home__quick-top">
-              <span className="home__eyebrow">
-                <Icon name="repeat" size={14} strokeWidth={2.4} /> {t('home.quickStart')}
-              </span>
-              <span className="home__quick-when">{whenLabel(recent.startedAt, now, tr)}</span>
-            </span>
-            <span className="home__quick-main">
-              <span className="ui-glyph ui-glyph--solid home__quick-glyph" aria-hidden>
-                <Icon name={modeIcon(recent.mode)} size={26} strokeWidth={2.2} />
-              </span>
-              <span className="home__quick-text">
-                <span className="home__quick-name">{recentName}</span>
-                <span className="home__quick-meta num">
-                  {recentName !== recentTitle && `${recentTitle} · `}
-                  {describe(recent.config, tr)}
-                  {recentTotal !== null && recent.config.mode !== 'countdown' && recent.config.mode !== 'amrap'
-                    ? ` · ${formatDuration(recentTotal, tr)}`
-                    : ''}
-                </span>
-              </span>
-              <span className="home__play" aria-hidden>
-                <Icon name="play" size={26} />
-              </span>
-            </span>
-          </button>
-        )}
-
-        <Section title={t('home.timers')} plain>
+        <Section title={t('home.timers')} plain className="home__timers">
           <div className="home__grid">
             {MODES.map((m) => {
               const cfg = last[m.mode];
@@ -276,6 +280,7 @@ export function Home() {
         <Section
           title={t('home.saved')}
           plain
+          className="home__saved"
           action={presets.length > 0 ? <span className="home__count num">{presets.length}</span> : undefined}
         >
           {presets.length === 0 ? (
@@ -298,7 +303,7 @@ export function Home() {
           )}
         </Section>
 
-        <Section title={t('home.benchmarks')} plain>
+        <Section title={t('home.benchmarks')} plain className="home__benchmarks">
           <div className="home__bench" role="list">
             {BUILT_IN_PRESETS.map((b) => {
               const info = modeInfo(b.config.mode);

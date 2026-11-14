@@ -1,4 +1,5 @@
 import { LocalNotifications, type LocalNotificationSchema } from '@capacitor/local-notifications';
+import { useSyncExternalStore } from 'react';
 import { getT } from '../i18n';
 import { isNative, platform } from './platform';
 import type { PlannedAlert } from './schedule';
@@ -29,6 +30,59 @@ let generation = 0;
 let scheduledIds: number[] = [];
 let chain: Promise<unknown> = Promise.resolve();
 let prepared: Promise<boolean> | null = null;
+
+// ------------------------------------------------------------------ permission state
+
+/**
+ * Whether Pulse may show notifications, as last seen by any native check:
+ * 'unknown' (web, or not checked yet), 'prompt' (never asked), 'granted' or 'denied'.
+ */
+export type NotifyPermission = 'unknown' | 'prompt' | 'granted' | 'denied';
+
+let permission: NotifyPermission = 'unknown';
+const permissionListeners = new Set<() => void>();
+
+function toPermission(p: string | undefined): NotifyPermission {
+  if (p === 'granted' || p === 'denied') return p;
+  if (p === 'prompt' || p === 'prompt-with-rationale') return 'prompt';
+  return 'unknown';
+}
+
+function setPermission(p: NotifyPermission): void {
+  if (p === permission) return;
+  permission = p;
+  for (const l of [...permissionListeners]) l();
+}
+
+/** Current notification permission (see NotifyPermission). */
+export function notificationPermission(): NotifyPermission {
+  return permission;
+}
+
+/** Subscribe to permission changes; returns the unsubscribe function. */
+export function subscribeNotificationPermission(listener: () => void): () => void {
+  permissionListeners.add(listener);
+  return () => permissionListeners.delete(listener);
+}
+
+/**
+ * Re-read the permission without prompting (e.g. when Settings opens or the app
+ * returns from the system Settings app). No-op on the web.
+ */
+export async function refreshNotificationPermission(): Promise<NotifyPermission> {
+  if (!isNative()) return permission;
+  try {
+    setPermission(toPermission((await LocalNotifications.checkPermissions()).display));
+  } catch {
+    /* keep the last known state */
+  }
+  return permission;
+}
+
+/** React: the live notification permission. */
+export function useNotificationPermission(): NotifyPermission {
+  return useSyncExternalStore(subscribeNotificationPermission, notificationPermission, notificationPermission);
+}
 
 /** Serialise native calls: a disarm must never overtake the arm it cancels. */
 function enqueue(fn: () => Promise<unknown>): Promise<void> {
@@ -86,6 +140,7 @@ export function prepareBackgroundCues(): Promise<boolean> {
       if (p.display === 'prompt' || p.display === 'prompt-with-rationale') {
         p = await LocalNotifications.requestPermissions();
       }
+      setPermission(toPermission(p.display));
       return p.display === 'granted';
     } catch {
       return false;
@@ -101,7 +156,9 @@ export function prepareBackgroundCues(): Promise<boolean> {
 
 async function canNotify(): Promise<boolean> {
   try {
-    return (await LocalNotifications.checkPermissions()).display === 'granted';
+    const p = toPermission((await LocalNotifications.checkPermissions()).display);
+    setPermission(p);
+    return p === 'granted';
   } catch {
     return false;
   }
@@ -200,4 +257,6 @@ export function __resetBackgroundForTests(): void {
   scheduledIds = [];
   chain = Promise.resolve();
   prepared = null;
+  permission = 'unknown';
+  permissionListeners.clear();
 }

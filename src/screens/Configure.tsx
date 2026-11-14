@@ -6,6 +6,7 @@ import { useNav } from '../nav';
 import { lastConfigStore, presetsStore, rememberConfig, savePreset, usePresets } from '../state/store';
 import { Button, Icon, Sheet, TopBar, modeIcon } from '../components/ui';
 import { ShareButton } from '../features/shareActions';
+import { useWide } from '../lib/useMediaQuery';
 import { ModeForm } from './configure/forms';
 import { problems, sanitize } from './configure/sanitize';
 import { startWorkout } from './configure/start';
@@ -28,6 +29,7 @@ export function Configure({ mode, initial }: ConfigureProps) {
   const { t } = tr;
   const modeName = modeTitle(mode, tr);
   const presets = usePresets();
+  const wide = useWide();
 
   const [config, setConfig] = useState<WorkoutConfig>(() => {
     const defaults = localizedDefaults(mode, tr);
@@ -88,46 +90,59 @@ export function Configure({ mode, initial }: ConfigureProps) {
 
   const title = config.name?.trim() || modeName;
 
+  // Save / Start: a bar pinned to the bottom on phones, under the live summary in the side pane on tablets.
+  const actions = (
+    <div className="cfg-bar">
+      <div className="cfg-bar__inner">
+        {savedFlash && (
+          <div className="cfg-toast" role="status">
+            <Icon name="check" size={16} /> {savedFlash}
+          </div>
+        )}
+        {issues.length > 0 && <p className="cfg-bar__issue" role="alert">{issues[0]}</p>}
+        <div className="cfg-bar__row">
+          <Button variant="secondary" size="lg" icon={preset ? 'save' : 'star'} onClick={openSave} aria-label={preset ? t('cfg.saveChanges') : t('cfg.saveWorkout')}>
+            {preset ? t('cfg.update') : t('common.save')}
+          </Button>
+          <Button variant="primary" size="lg" icon="play" block onClick={start} disabled={issues.length > 0}>
+            {t('common.start')}
+          </Button>
+        </div>
+      </div>
+    </div>
+  );
+
   return (
     <div className="ui-page cfg" style={{ '--accent': info.accent } as CSSProperties}>
       <div className="ui-page__inner">
         <TopBar title={<span className="cfg__bar-title">{modeName}</span>} right={<ShareButton config={config} />} />
 
-        <header className="cfg__hero">
-          <span className="cfg__eyebrow">
-            <span className="ui-glyph cfg__glyph" aria-hidden>
-              <Icon name={modeIcon(mode)} size={16} strokeWidth={2.4} />
+        <div className="cfg__layout">
+          <header className="cfg__hero">
+            <span className="cfg__eyebrow">
+              <span className="ui-glyph cfg__glyph" aria-hidden>
+                <Icon name={modeIcon(mode)} size={16} strokeWidth={2.4} />
+              </span>
+              {config.name ? modeName : t('cfg.timer')}
+              {preset && <span className="cfg__badge">{t('cfg.saved')}</span>}
             </span>
-            {config.name ? modeName : t('cfg.timer')}
-            {preset && <span className="cfg__badge">{t('cfg.saved')}</span>}
-          </span>
-          <h2 className="cfg__title">{title}</h2>
-          <p className="cfg__tagline">{modeTagline(mode, tr)}</p>
-        </header>
+            <h2 className="cfg__title">{title}</h2>
+            <p className="cfg__tagline">{modeTagline(mode, tr)}</p>
+          </header>
 
-        <Summary config={config} />
+          {/* Tablets: a sticky side pane (live summary + actions) next to the form. */}
+          <div className="cfg__side">
+            <Summary config={config} />
+            {wide && actions}
+          </div>
 
-        <ModeForm config={config} onChange={update} />
-      </div>
-
-      <div className="cfg-bar">
-        <div className="cfg-bar__inner">
-          {savedFlash && (
-            <div className="cfg-toast" role="status">
-              <Icon name="check" size={16} /> {savedFlash}
-            </div>
-          )}
-          {issues.length > 0 && <p className="cfg-bar__issue" role="alert">{issues[0]}</p>}
-          <div className="cfg-bar__row">
-            <Button variant="secondary" size="lg" icon={preset ? 'save' : 'star'} onClick={openSave} aria-label={preset ? t('cfg.saveChanges') : t('cfg.saveWorkout')}>
-              {preset ? t('cfg.update') : t('common.save')}
-            </Button>
-            <Button variant="primary" size="lg" icon="play" block onClick={start} disabled={issues.length > 0}>
-              {t('common.start')}
-            </Button>
+          <div className="cfg__form">
+            <ModeForm config={config} onChange={update} />
           </div>
         </div>
       </div>
+
+      {!wide && actions}
 
       <Sheet
         open={saveOpen}

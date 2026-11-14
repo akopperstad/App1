@@ -131,3 +131,71 @@
   font-size: var(--fs-sm);
   color: var(--fg-2);
 }
+
+/* "Alerts when locked" while the OS has notifications turned off for Pulse. */
+.settings__note {
+  display: flex;
+  align-items: flex-start;
+  gap: 6px;
+  margin-top: var(--s-2);
+  padding: var(--s-2) var(--s-3);
+  border-radius: var(--r-sm);
+  background: var(--prep-soft);
+  color: var(--fg);
+  font-size: var(--fs-sm);
+  font-weight: 600;
+  line-height: 1.3;
+}
+.settings__note svg {
+  flex: none;
+  margin-top: 2px;
+  color: var(--prep);
+}
+:root[data-theme='light'] .settings__note svg {
+  color: #9a6a00;
+}
+
+/* ==========================================================================
+   Tablets: grouped sections in two columns, like the grouped settings panes on
+   iPad / Android tablets — Sound (the tallest group) on the left, the shorter
+   groups stacked beside it. Phones: one column.
+   ========================================================================== */
+@media (min-width: 768px) and (min-height: 500px) {
+  .ui-page.settings {
+    --content-max: 1080px;
+  }
+  .settings__groups {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    grid-template-rows: repeat(3, auto) 1fr;
+    grid-template-areas:
+      'sound timer'
+      'sound feedback'
+      'sound appearance'
+      'sound data';
+    column-gap: var(--s-6);
+    align-items: start;
+  }
+  .settings__groups > .ui-section {
+    margin-top: var(--s-5);
+    min-width: 0;
+  }
+  .settings__timer {
+    grid-area: timer;
+  }
+  .settings__sound {
+    grid-area: sound;
+  }
+  .settings__feedback {
+    grid-area: feedback;
+  }
+  .settings__appearance {
+    grid-area: appearance;
+  }
+  .settings__data {
+    grid-area: data;
+  }
+  .settings__about {
+    margin-top: var(--s-7);
+  }
+}

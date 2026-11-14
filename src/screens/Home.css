@@ -650,3 +650,195 @@
   margin: 0;
   color: var(--fg-2);
 }
+
+/* ==========================================================================
+   Tablets (iPad, Android tablets): a real canvas instead of a phone column.
+   Phones (any orientation: never ≥ 500px tall when ≥ 768px wide) are untouched.
+   ========================================================================== */
+@media (min-width: 768px) and (min-height: 500px) {
+  .ui-page.home {
+    --content-max: 1080px;
+  }
+  .home__header {
+    padding-top: var(--s-3);
+  }
+
+  /* Quick start + this week, side by side */
+  .home__top {
+    margin-top: var(--s-5);
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(272px, 34%);
+    grid-template-areas: 'quick week';
+    gap: var(--s-4);
+    align-items: stretch;
+  }
+  .home__top > .home__quick {
+    grid-area: quick;
+    margin-top: 0;
+    justify-content: space-between;
+  }
+  .home__top > .home__week {
+    grid-area: week;
+    margin-top: 0;
+    flex-wrap: wrap;
+    align-content: space-between;
+    column-gap: var(--s-5);
+    row-gap: var(--s-4);
+    padding: var(--s-4) var(--s-5);
+    border-radius: var(--r-xl);
+  }
+  /* The card is narrow but tall here: keep both stats (the phone container query drops one). */
+  .home__top > .home__week .home__week-stat:nth-child(2) {
+    display: flex;
+  }
+  .home__top > .home__week .home__week-num {
+    font-size: var(--fs-xl);
+  }
+  .home__top > .home__week .home__days {
+    margin-left: 0;
+    flex: 1 1 100%;
+    justify-content: space-between;
+  }
+  .home__top > .home__week .home__day {
+    gap: 6px;
+  }
+  .home__top > .home__week .home__day-dot {
+    width: 14px;
+    height: 14px;
+  }
+  .home__top > .home__week .home__day-l {
+    font-size: var(--fs-2xs);
+  }
+  /* Only the week card (no quick start yet): full width, phone-style row. */
+  .home__top > .home__week:only-child {
+    grid-column: 1 / -1;
+    flex-wrap: nowrap;
+  }
+  .home__top > .home__week:only-child .home__days {
+    flex: none;
+    margin-left: auto;
+    gap: var(--s-3);
+  }
+
+  .ui-section.home__timers {
+    margin-top: var(--s-6);
+  }
+  .mode-card {
+    min-height: 168px;
+    border-radius: var(--r-xl);
+  }
+
+  /* Saved workouts: a grid of cards instead of one long list. */
+  .home__list.ui-card {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(min(100%, 300px), 1fr));
+    gap: var(--s-3);
+    background: none;
+    border: 0;
+    border-radius: 0;
+    box-shadow: none;
+    overflow: visible;
+  }
+  :root[data-theme='light'] .home__list.ui-card {
+    box-shadow: none;
+  }
+  .home__list .preset-row {
+    border-radius: var(--r-lg);
+    background: var(--card);
+    border: 1px solid var(--line);
+    box-shadow: var(--hi);
+    overflow: hidden;
+  }
+  :root[data-theme='light'] .home__list .preset-row {
+    border-color: transparent;
+    box-shadow: var(--shadow-1);
+  }
+  .home__list .preset-row + .preset-row {
+    border-top: 1px solid var(--line);
+  }
+  :root[data-theme='light'] .home__list .preset-row + .preset-row {
+    border-top-color: transparent;
+  }
+  @media (hover: hover) {
+    .home__list .preset-row:hover {
+      border-color: color-mix(in srgb, var(--accent) 45%, var(--line));
+    }
+  }
+
+  .bench-card {
+    min-height: 132px;
+    padding: var(--s-4);
+  }
+  .home__bench {
+    gap: var(--s-3);
+  }
+}
+
+/* Landscape tablets / wide screens: dashboard — timers with saved workouts in a side rail. */
+@media (min-width: 1100px) and (min-height: 500px) {
+  .ui-page.home {
+    --content-max: 1240px;
+  }
+  .home > .ui-page__inner {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(340px, 34%);
+    grid-template-areas:
+      'head head'
+      'top top'
+      'timers saved'
+      'bench bench';
+    column-gap: var(--s-5);
+    align-items: start;
+  }
+  .home__header {
+    grid-area: head;
+  }
+  .home__top {
+    grid-area: top;
+  }
+  .home__timers {
+    grid-area: timers;
+  }
+  .ui-section.home__saved {
+    grid-area: saved;
+    margin-top: var(--s-6);
+  }
+  .home__benchmarks {
+    grid-area: bench;
+  }
+  /* The quick-start card lines up with the timer grid, the week card with the rail. */
+  .home__top {
+    grid-template-columns: minmax(0, 1fr) minmax(340px, 34%);
+    gap: var(--s-5);
+  }
+  /* In the rail, saved workouts read as one grouped list again. */
+  .home__saved .home__list.ui-card {
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+    background: var(--card);
+    border: 1px solid var(--line);
+    border-radius: var(--r-xl);
+    box-shadow: var(--hi), var(--shadow-1);
+    overflow: hidden;
+  }
+  :root[data-theme='light'] .home__saved .home__list.ui-card {
+    border-color: transparent;
+    box-shadow: var(--shadow-2);
+  }
+  .home__saved .home__list .preset-row {
+    border: 0;
+    border-radius: 0;
+    background: none;
+    box-shadow: none;
+  }
+  .home__saved .home__list .preset-row + .preset-row {
+    border-top: 1px solid var(--line);
+  }
+  :root[data-theme='light'] .home__saved .home__list .preset-row + .preset-row {
+    border-top-color: var(--line);
+  }
+  .home__saved .preset-row__main {
+    min-height: 76px;
+  }
+}

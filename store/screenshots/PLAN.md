@@ -129,3 +129,9 @@ What was produced vs. the storyboard above:
   attempt expanded with its round splits (the 8-week chart is shown on tablets).
 - Frame 8 is scrolled so the "Play over music" hint (which names a third-party app) is out of frame.
 - Tablets (iPad 13", Play 7" and 10"): 6 landscape frames as planned.
+- Tablets show the tablet layouts (Nov 2026): Home is a dashboard (quick start + week, 3×3 timer
+  grid with taglines, saved-workouts rail; the 7" frame is scrolled to the grid), Custom builder is
+  two-pane (form + sticky summary with Save/Start), History has a stats/chart/records side column
+  next to the list, Settings is two columns with Sound on the left. On tablets the Settings frame is
+  unscrolled, so the recipe swaps the web build's "Play over music" hint (which names the other
+  platform) for the hint the iOS/Android app shows (`settings.mix.hint`).

@@ -8,6 +8,7 @@ import { formatClockString, formatCompact } from '../lib/format';
 import { useNav } from '../nav';
 import { clearHistory, deleteHistory, useHistory, type HistoryEntry } from '../state/store';
 import { Button, Icon, Sheet, TopBar } from '../components/ui';
+import { useWide } from '../lib/useMediaQuery';
 import { startWorkout } from './configure/start';
 import './History.css';
 
@@ -58,6 +59,8 @@ export function History() {
   const [open, setOpen] = useState<string | null>(null);
   const [confirmClear, setConfirmClear] = useState(false);
   const [filter, setFilter] = useState<Filter>('all');
+  // Tablets: stats, chart and records in a side column next to the list.
+  const wide = useWide();
 
   const now = Date.now();
   const today = startOfDay(now);
@@ -90,6 +93,61 @@ export function History() {
 
   const shownRecords = records.filter((r) => activeFilter === 'all' || r.mode === activeFilter).slice(0, 6);
 
+  const statsBlock = (
+    <div className="hist-stats" role="group" aria-label={t('hist.thisWeek')}>
+      <Stat icon="bolt" value={String(stats.weekCount)} label={tp('hist.workoutsWeek', stats.weekCount)} tone="work" />
+      <Stat icon="timer" value={formatCompact(stats.weekMs, tr)} label={t('hist.timeWeek')} tone="rest" />
+      <Stat icon="flame" value={String(stats.streak)} label={t('hist.streak')} tone="prep" />
+    </div>
+  );
+
+  const filterBlock = modes.length > 1 && (
+    <div className="hist-filter" role="group" aria-label={t('hist.filter')}>
+      {(['all', ...modes] as Filter[]).map((m) => (
+        <button
+          key={m}
+          type="button"
+          className={`hist-chip${activeFilter === m ? ' is-active' : ''}`}
+          aria-pressed={activeFilter === m}
+          style={m === 'all' ? undefined : ({ '--accent': modeInfo(m).accent } as CSSProperties)}
+          onClick={() => setFilter(m)}
+        >
+          {m !== 'all' && <span className="hist-chip__dot" aria-hidden />}
+          {m === 'all' ? t('hist.filterAll') : t(`mode.${m}`)}
+        </button>
+      ))}
+    </div>
+  );
+
+  const listBlock = (
+    <>
+      {groups.map((g) => (
+        <section key={g.day} className="hist-group">
+          <h2 className="hist-group__title">{dayLabel(g.day, today, tr)}</h2>
+          <div className="ui-card">
+            {g.items.map((h) => (
+              <EntryRow
+                key={h.id}
+                entry={h}
+                pr={prIds.has(h.id)}
+                open={open === h.id}
+                onToggle={() => setOpen((o) => (o === h.id ? null : h.id))}
+                onRepeat={() => startWorkout(nav, h.config)}
+                onDelete={() => {
+                  deleteHistory(h.id);
+                  setOpen(null);
+                }}
+              />
+            ))}
+          </div>
+        </section>
+      ))}
+      {groups.length === 0 && activeFilter !== 'all' && (
+        <p className="hist-filter__empty">{t('hist.filterEmpty', { mode: t(`mode.${activeFilter}`) })}</p>
+      )}
+    </>
+  );
+
   return (
     <div className="ui-page hist">
       <div className="ui-page__inner">
@@ -104,70 +162,40 @@ export function History() {
           }
         />
 
-        <div className="hist-stats" role="group" aria-label={t('hist.thisWeek')}>
-          <Stat icon="bolt" value={String(stats.weekCount)} label={tp('hist.workoutsWeek', stats.weekCount)} tone="work" />
-          <Stat icon="timer" value={formatCompact(stats.weekMs, tr)} label={t('hist.timeWeek')} tone="rest" />
-          <Stat icon="flame" value={String(stats.streak)} label={t('hist.streak')} tone="prep" />
-        </div>
-
-        {history.length === 0 ? (
-          <div className="hist-empty">
-            <div className="hist-empty__art" aria-hidden>
-              <Icon name="pulse" size={36} strokeWidth={2.4} />
+        {wide && history.length > 0 ? (
+          <div className="hist__layout">
+            <aside className="hist__side">
+              {statsBlock}
+              <WeeklyChart weeks={weeks} />
+              {shownRecords.length > 0 && <Records records={shownRecords} />}
+            </aside>
+            <div className="hist__main">
+              {filterBlock}
+              {listBlock}
             </div>
-            <h2>{t('hist.emptyTitle')}</h2>
-            <p>{t('hist.emptyBody')}</p>
-            <Button variant="primary" icon="play" onClick={() => nav.back()}>
-              {t('hist.emptyCta')}
-            </Button>
           </div>
         ) : (
           <>
-            <WeeklyChart weeks={weeks} />
+            {statsBlock}
 
-            {modes.length > 1 && (
-              <div className="hist-filter" role="group" aria-label={t('hist.filter')}>
-                {(['all', ...modes] as Filter[]).map((m) => (
-                  <button
-                    key={m}
-                    type="button"
-                    className={`hist-chip${activeFilter === m ? ' is-active' : ''}`}
-                    aria-pressed={activeFilter === m}
-                    style={m === 'all' ? undefined : ({ '--accent': modeInfo(m).accent } as CSSProperties)}
-                    onClick={() => setFilter(m)}
-                  >
-                    {m !== 'all' && <span className="hist-chip__dot" aria-hidden />}
-                    {m === 'all' ? t('hist.filterAll') : t(`mode.${m}`)}
-                  </button>
-                ))}
-              </div>
-            )}
-
-            {shownRecords.length > 0 && <Records records={shownRecords} />}
-
-            {groups.map((g) => (
-              <section key={g.day} className="hist-group">
-                <h2 className="hist-group__title">{dayLabel(g.day, today, tr)}</h2>
-                <div className="ui-card">
-                  {g.items.map((h) => (
-                    <EntryRow
-                      key={h.id}
-                      entry={h}
-                      pr={prIds.has(h.id)}
-                      open={open === h.id}
-                      onToggle={() => setOpen((o) => (o === h.id ? null : h.id))}
-                      onRepeat={() => startWorkout(nav, h.config)}
-                      onDelete={() => {
-                        deleteHistory(h.id);
-                        setOpen(null);
-                      }}
-                    />
-                  ))}
+            {history.length === 0 ? (
+              <div className="hist-empty">
+                <div className="hist-empty__art" aria-hidden>
+                  <Icon name="pulse" size={36} strokeWidth={2.4} />
                 </div>
-              </section>
-            ))}
-            {groups.length === 0 && activeFilter !== 'all' && (
-              <p className="hist-filter__empty">{t('hist.filterEmpty', { mode: t(`mode.${activeFilter}`) })}</p>
+                <h2>{t('hist.emptyTitle')}</h2>
+                <p>{t('hist.emptyBody')}</p>
+                <Button variant="primary" icon="play" onClick={() => nav.back()}>
+                  {t('hist.emptyCta')}
+                </Button>
+              </div>
+            ) : (
+              <>
+                <WeeklyChart weeks={weeks} />
+                {filterBlock}
+                {shownRecords.length > 0 && <Records records={shownRecords} />}
+                {listBlock}
+              </>
             )}
           </>
         )}

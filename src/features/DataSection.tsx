@@ -128,7 +128,7 @@ export function DataSection() {
 
   return (
     <>
-      <Section title={t('settings.section.data')}>
+      <Section title={t('settings.section.data')} className="settings__data">
         <ActionRow icon={G.download} label={t('settings.backup')} hint={t('settings.backup.hint')} onClick={() => void backup()} />
         <ActionRow icon={G.upload} label={t('settings.restore')} hint={t('settings.restore.hint')} onClick={() => fileRef.current?.click()} />
         <ActionRow icon={G.table} label={t('settings.csv')} hint={t('settings.csv.hint')} onClick={() => void exportCsv()} />

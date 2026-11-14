@@ -150,9 +150,10 @@ const SHOTS = {
     theme: 'dark',
     stack: null,
     async run(page) {
-      // short landscape tablets: lead with the timer grid rather than the header
+      // Wide tablets (≥ 1100 px) show the whole dashboard: quick start, week, timers, saved rail.
+      // The small 7" landscape tablet leads with the timer grid rather than the header.
       const vp = page.viewportSize();
-      if (vp.width >= 700 && vp.height < 900) await scrollTo(page, '.home__grid', 0.11);
+      if (vp.width >= 700 && vp.width < 1100 && vp.height < 900) await scrollTo(page, '.home__grid', 0.11);
       await settle(page, 400);
     },
   },
@@ -221,7 +222,19 @@ const SHOTS = {
     theme: 'dark',
     stack: () => [{ name: 'home' }, { name: 'settings' }],
     async run(page) {
-      await scrollTo(page, '.settings__packs', 0.42); // keeps the 'Play over music' hint (names a third-party app) out of frame
+      if (page.viewportSize().width < 700) {
+        await scrollTo(page, '.settings__packs', 0.42); // keeps the 'Play over music' hint (names a third-party app) out of frame
+      } else {
+        // Tablets show the two-column page unscrolled, so the 'Play over music' row is in frame:
+        // show the hint the iOS / Android app shows (the web build's hint names the other platform).
+        await page.evaluate(async () => {
+          const { translator } = await import('/src/i18n/core.ts');
+          const lang = document.documentElement.lang.slice(0, 2);
+          const tr = translator(lang);
+          const web = tr.t('settings.mix.hintWeb');
+          for (const el of document.querySelectorAll('.ui-row__hint')) if (el.textContent === web) el.textContent = tr.t('settings.mix.hint');
+        });
+      }
       await settle(page, 400);
     },
   },
