@@ -7,6 +7,9 @@ export const de: Dict = {
   'common.done': 'Fertig',
   'common.next': 'Weiter',
   'common.back': 'Zurück',
+  'crash.title': 'Etwas ist schiefgelaufen',
+  'crash.body': 'Deine gespeicherten Workouts und dein Verlauf sind sicher.',
+  'crash.reload': 'Neu laden',
   'common.skip': 'Überspringen',
   'common.import': 'Importieren',
   'common.share': 'Teilen',
@@ -468,8 +471,8 @@ export const de: Dict = {
 
   // ---- settings additions
   'settings.mix': 'Über Musik abspielen',
-  'settings.mix.hint': 'Signale laufen über Spotify & Co., statt sie zu pausieren',
-  'settings.mix.hintWeb': 'Signale laufen über Spotify & Co. — gilt in der Pulse-App für iPhone und Android',
+  'settings.mix.hint': 'Signale laufen über deine Musik-App, statt sie zu pausieren',
+  'settings.mix.hintWeb': 'Signale laufen über deine Musik-App — gilt in der Pulse-App für iPhone und Android',
   'settings.bgAlerts': 'Hinweise bei Sperre',
   'settings.bgAlerts.hint': 'Eine Mitteilung bei jedem Phasenwechsel, während das Handy gesperrt ist',
 

@@ -178,12 +178,20 @@ export function decodeWorkout(code: unknown): WorkoutConfig | null {
  * native builds (capacitor://localhost, https://localhost) need the real
  * public host, configurable with VITE_SHARE_ORIGIN at build time.
  */
-export function shareBase(loc: { protocol: string; hostname: string; origin: string; pathname: string } = location): string {
-  const env = (import.meta as unknown as { env?: Record<string, string | undefined> }).env?.VITE_SHARE_ORIGIN;
+export function shareBase(
+  loc: { protocol: string; hostname: string; origin: string; pathname: string; port?: string } = location,
+  env: string | undefined = (import.meta as unknown as { env?: Record<string, string | undefined> }).env?.VITE_SHARE_ORIGIN,
+): string {
   const isPublicWeb =
     (loc.protocol === 'https:' || loc.protocol === 'http:') && loc.hostname !== 'localhost' && loc.hostname !== '127.0.0.1';
-  if (isPublicWeb || !env) return `${loc.origin}${loc.pathname}`;
-  return env.endsWith('/') ? env : `${env}/`;
+  if (isPublicWeb) return `${loc.origin}${loc.pathname}`;
+  if (env) return env.endsWith('/') ? env : `${env}/`;
+  // Native app built without VITE_SHARE_ORIGIN (capacitor://localhost on iOS,
+  // https://localhost on Android): a localhost link would be useless to the
+  // recipient, so fall back to the app's own scheme (opens Pulse if installed).
+  const nativeShell = loc.protocol === 'capacitor:' || (loc.protocol === 'https:' && loc.hostname === 'localhost' && !loc.port);
+  if (nativeShell) return 'pulsetimer://import';
+  return `${loc.origin}${loc.pathname}`;
 }
 
 export function shareUrl(config: WorkoutConfig, base = shareBase()): string {

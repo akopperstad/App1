@@ -1,6 +1,7 @@
 import { act, cleanup, fireEvent, render, screen } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { App } from '../App';
+import { ErrorBoundary } from '../ErrorBoundary';
 import { NavContext, type Nav, type Route } from '../nav';
 import { History } from '../screens/History';
 import { Onboarding } from '../screens/Onboarding';
@@ -181,6 +182,56 @@ describe('App wiring', () => {
     expect(screen.getByRole('region', { name: 'Welcome to Pulse' })).toBeTruthy();
     fireEvent.click(screen.getByRole('button', { name: 'Skip' }));
     expect(screen.queryByRole('region', { name: 'Welcome to Pulse' })).toBeNull();
+  });
+
+  it('cold start on a share link: home gets its own history entry, so back stays in the app', async () => {
+    vi.resetModules(); // the launch link is read once per page load
+    history.replaceState(null, '', `/#w=${encodeWorkout(amrap)}`);
+    const before = history.length;
+    const { App: FreshApp } = await import('../App');
+    render(<FreshApp />);
+    expect(history.length).toBe(before + 1);
+    expect(history.state).toMatchObject({ depth: 1, stack: [{ name: 'home' }, { name: 'configure', mode: 'amrap' }] });
+    expect(location.hash).toBe('');
+  });
+
+  it('back (browser / Android) during an active workout asks before leaving', () => {
+    vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout', 'setInterval', 'clearInterval', 'Date', 'performance', 'requestAnimationFrame', 'cancelAnimationFrame'] });
+    try {
+      settingsStore.set({ ...defaultSettings, onboarded: true, language: 'en', prepSec: 0, sound: false, voice: false, vibration: false });
+      history.replaceState({ depth: 1, stack: [{ name: 'home' }, { name: 'run', config: { mode: 'countdown', durationSec: 60 } }] }, '');
+      render(<App />);
+      fireEvent.click(document.querySelector('.start')!);
+      act(() => void vi.advanceTimersByTime(2_000));
+      const lenBefore = history.length;
+      act(() => {
+        history.replaceState({ depth: 0, stack: [{ name: 'home' }] }, ''); // what the browser shows after "back"
+        window.dispatchEvent(new PopStateEvent('popstate', { state: history.state }));
+      });
+      expect(document.querySelector('.run')).toBeTruthy();
+      expect(screen.getByRole('dialog')).toBeTruthy();
+      expect((history.state as { depth: number }).depth).toBe(1);
+      expect(history.length).toBe(lenBefore + 1);
+      expect(document.querySelector('.run')?.getAttribute('data-status')).toBe('running');
+    } finally {
+      cleanup();
+      vi.useRealTimers();
+    }
+  });
+
+  it('a render crash shows a recovery screen instead of a blank page', () => {
+    vi.spyOn(console, 'error').mockImplementation(() => {});
+    function Boom(): never {
+      throw new Error('boom');
+    }
+    render(
+      <ErrorBoundary>
+        <Boom />
+      </ErrorBoundary>,
+    );
+    expect(screen.getByRole('alert').textContent).toContain('Something went wrong');
+    expect(screen.getByRole('button', { name: 'Reload' })).toBeTruthy();
+    vi.restoreAllMocks();
   });
 
   it('opens a shared link from the hash while running', () => {

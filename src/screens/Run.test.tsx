@@ -4,7 +4,8 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { cuePlayer } from '../audio/cues';
 import type { WorkoutConfig } from '../engine/types';
 import { NavContext, type Nav } from '../nav';
-import { historyStore, settingsStore, defaultSettings } from '../state/store';
+import { historyStore, presetsStore, savePreset, settingsStore, defaultSettings } from '../state/store';
+import { isSavedPreset } from './run/FinishSummary';
 import { Run } from './Run';
 
 function nav(): Nav {
@@ -172,5 +173,40 @@ describe('Run screen', () => {
     start();
     advance(1_000);
     expect(screen.getByRole('timer')).toBeTruthy();
+  });
+
+  it('no duplicate React keys when the 3-2-1 beat and a segment flash overlap', () => {
+    const err = vi.spyOn(console, 'error').mockImplementation(() => {});
+    settingsStore.set({ ...defaultSettings, prepSec: 0, voice: false, sound: false, vibration: false, flashOnChange: true });
+    render(
+      <NavContext.Provider value={nav()}>
+        <Run config={{ mode: 'interval', workSec: 5, restSec: 5, rounds: 3, sets: 1, restBetweenSetsSec: 0, movements: [] }} />
+      </NavContext.Provider>,
+    );
+    start();
+    for (let i = 0; i < 300; i++) advance(100);
+    expect(err.mock.calls.filter((c) => String(c[0]).includes('same key'))).toEqual([]);
+  });
+
+  it('summary: "Save workout" is not offered for a workout that is already saved', () => {
+    presetsStore.set([]);
+    const cfg: WorkoutConfig = { mode: 'countdown', durationSec: 1 };
+    expect(isSavedPreset(cfg, presetsStore.get())).toBe(false);
+    savePreset('Quick one', cfg);
+    expect(isSavedPreset({ durationSec: 1, mode: 'countdown', name: 'Other' } as WorkoutConfig, presetsStore.get())).toBe(true);
+    expect(isSavedPreset({ mode: 'countdown', durationSec: 2 }, presetsStore.get())).toBe(false);
+    mount({ ...cfg, name: 'Quick one' });
+    start();
+    advance(1_500);
+    const save = screen.getByRole('button', { name: /saved/i }) as HTMLButtonElement;
+    expect(save.disabled).toBe(true);
+    presetsStore.set([]);
+  });
+
+  it('an absurd config (e.g. from a hand-edited backup) is clamped instead of compiling millions of segments', () => {
+    const t0 = Date.now();
+    mount({ mode: 'tabata', workSec: 1, restSec: 0, rounds: 604800, sets: 604800, restBetweenSetsSec: 0, movements: [] });
+    expect(screen.getByRole('button', { name: /start/i })).toBeTruthy();
+    expect(Date.now() - t0).toBeLessThan(5_000);
   });
 });

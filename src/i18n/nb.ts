@@ -7,6 +7,9 @@ export const nb: Dict = {
   'common.done': 'Ferdig',
   'common.next': 'Neste',
   'common.back': 'Tilbake',
+  'crash.title': 'Noe gikk galt',
+  'crash.body': 'Lagrede økter og historikk er trygge.',
+  'crash.reload': 'Last inn på nytt',
   'common.skip': 'Hopp over',
   'common.import': 'Importer',
   'common.share': 'Del',
@@ -468,8 +471,8 @@ export const nb: Dict = {
 
   // ---- settings additions
   'settings.mix': 'Spill over musikk',
-  'settings.mix.hint': 'Pipene blandes med Spotify og andre apper i stedet for å pause dem',
-  'settings.mix.hintWeb': 'Pipene blandes med Spotify og andre apper — gjelder i Pulse-appen for iPhone og Android',
+  'settings.mix.hint': 'Pipene spilles over musikkappen din i stedet for å pause den',
+  'settings.mix.hintWeb': 'Pipene spilles over musikkappen din — gjelder i Pulse-appen for iPhone og Android',
   'settings.bgAlerts': 'Varsler når skjermen er låst',
   'settings.bgAlerts.hint': 'Et varsel ved hvert faseskifte mens telefonen er låst',
 

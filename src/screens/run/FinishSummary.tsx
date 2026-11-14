@@ -3,7 +3,7 @@ import { describe, modeTitle } from '../../engine/modes';
 import { useT } from '../../i18n';
 import type { Segment, Snapshot, WorkoutConfig } from '../../engine/types';
 import { formatClock, formatClockString } from '../../lib/format';
-import { savePreset } from '../../state/store';
+import { savePreset, usePresets, type Preset } from '../../state/store';
 import { IconBookmark, IconCheck, IconHome, IconRepeat, IconStop } from './icons';
 import { roundRows, SplitList } from './LapList';
 import { roundsFor } from './session';
@@ -21,12 +21,13 @@ interface Props {
 
 const CONFETTI_COLORS = ['var(--work)', 'var(--rest)', 'var(--prep)', 'var(--done)', 'var(--mode-fortime)', 'var(--mode-tabata)'];
 
-/** A short, CSS-only burst behind the badge (hidden with reduced motion). */
+/** A short, CSS-only burst around the badge, above the text (hidden with reduced motion). */
 function Confetti() {
   return (
     <div className="confetti" aria-hidden="true">
       {Array.from({ length: 30 }, (_, i) => {
-        const angle = (i * 360) / 30 + ((i * 37) % 11) - 5;
+        // Upward fan (-80°..80° from straight up) so no piece crosses the text below the badge.
+        const angle = -80 + (i * 160) / 29 + ((i * 37) % 7) - 3;
         const style = {
           '--a': `${angle}deg`,
           '--r': `${90 + ((i * 53) % 90)}px`,
@@ -40,10 +41,34 @@ function Confetti() {
   );
 }
 
+/** Key-order-independent JSON, so a preset's stored copy compares equal to the running config. */
+function canonical(v: unknown): string {
+  if (Array.isArray(v)) return `[${v.map(canonical).join(',')}]`;
+  if (v && typeof v === 'object') {
+    const o = v as Record<string, unknown>;
+    return `{${Object.keys(o)
+      .filter((k) => o[k] !== undefined)
+      .sort()
+      .map((k) => `${JSON.stringify(k)}:${canonical(o[k])}`)
+      .join(',')}}`;
+  }
+  return JSON.stringify(v) ?? 'null';
+}
+
+/** The workout that just ran is already one of the saved workouts (same plan, any name). */
+export function isSavedPreset(config: WorkoutConfig, presets: readonly Preset[]): boolean {
+  const plan = (c: WorkoutConfig) => canonical({ ...c, name: undefined });
+  const want = plan(config);
+  return presets.some((p) => plan(p.config) === want);
+}
+
 export function FinishSummary({ config, snap, segments, completed, natural, onRepeat, onHome }: Props) {
   const [naming, setNaming] = useState(false);
   const [saved, setSaved] = useState<string | null>(null);
   const [name, setName] = useState(config.name ?? '');
+  const presets = usePresets();
+  // Started from a saved workout (or saved just now): nothing to save.
+  const alreadySaved = saved !== null || isSavedPreset(config, presets);
 
   const tr = useT();
   const { t } = tr;
@@ -92,8 +117,8 @@ export function FinishSummary({ config, snap, segments, completed, natural, onRe
           <button type="button" className="btn btn--primary" onClick={onRepeat}>
             <IconRepeat size={22} /> {t('fin.repeat')}
           </button>
-          <button type="button" className="btn" onClick={() => setNaming(true)} disabled={saved !== null}>
-            <IconBookmark size={20} /> {saved ? t('fin.saved') : t('fin.save')}
+          <button type="button" className="btn" onClick={() => setNaming(true)} disabled={alreadySaved}>
+            <IconBookmark size={20} /> {alreadySaved ? t('fin.saved') : t('fin.save')}
           </button>
           <button type="button" className="btn" onClick={onHome}>
             <IconHome size={20} /> {t('fin.home')}

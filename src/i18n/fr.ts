@@ -7,6 +7,9 @@ export const fr: Dict = {
   'common.done': 'Terminé',
   'common.next': 'Suivant',
   'common.back': 'Retour',
+  'crash.title': 'Un problème est survenu',
+  'crash.body': 'Vos séances enregistrées et votre historique sont intacts.',
+  'crash.reload': 'Recharger',
   'common.skip': 'Passer',
   'common.import': 'Importer',
   'common.share': 'Partager',
@@ -468,8 +471,8 @@ export const fr: Dict = {
 
   // ---- settings additions
   'settings.mix': 'Jouer par-dessus la musique',
-  'settings.mix.hint': 'Les bips se mêlent à Spotify et aux autres apps sans les couper',
-  'settings.mix.hintWeb': 'Les bips se mêlent à Spotify et aux autres apps — dans l’app Pulse pour iPhone et Android',
+  'settings.mix.hint': 'Les bips passent par-dessus votre app de musique sans la couper',
+  'settings.mix.hintWeb': 'Les bips passent par-dessus votre app de musique — dans l’app Pulse pour iPhone et Android',
   'settings.bgAlerts': 'Alertes écran verrouillé',
   'settings.bgAlerts.hint': 'Une notification à chaque changement de phase, téléphone verrouillé',
 

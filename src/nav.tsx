@@ -25,3 +25,11 @@ export function useNav(): Nav {
   if (!nav) throw new Error('useNav outside NavContext');
   return nav;
 }
+
+/**
+ * Optional veto for the browser / Android back button (popstate). The Run
+ * screen sets it while a workout is active: instead of silently abandoning
+ * the workout, back opens the "Leave workout?" sheet. Return true when the
+ * back press was handled (the screen stays).
+ */
+export const backGuard: { current: (() => boolean) | null } = { current: null };

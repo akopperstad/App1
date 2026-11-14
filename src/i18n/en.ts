@@ -10,6 +10,9 @@ export const en = {
   'common.done': 'Done',
   'common.next': 'Next',
   'common.back': 'Back',
+  'crash.title': 'Something went wrong',
+  'crash.body': 'Your saved workouts and history are safe.',
+  'crash.reload': 'Reload',
   'common.skip': 'Skip',
   'common.import': 'Import',
   'common.share': 'Share',
@@ -478,8 +481,8 @@ export const en = {
 
   // ---- settings additions
   'settings.mix': 'Play over music',
-  'settings.mix.hint': 'Beeps mix with Spotify and other apps instead of pausing them',
-  'settings.mix.hintWeb': 'Beeps mix with Spotify and other apps — applies in the Pulse app for iPhone and Android',
+  'settings.mix.hint': 'Beeps play over your music app instead of pausing it',
+  'settings.mix.hintWeb': 'Beeps play over your music app — applies in the Pulse app for iPhone and Android',
   'settings.bgAlerts': 'Alerts when locked',
   'settings.bgAlerts.hint': 'A notification at each phase change while your phone is locked',
 

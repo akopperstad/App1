@@ -1729,6 +1729,11 @@
 .summary__hero {
   position: relative;
 }
+/* Text always paints above the confetti burst. */
+.summary__hero > :not(.confetti) {
+  position: relative;
+  z-index: 1;
+}
 .summary__badge {
   position: relative;
   z-index: 1;

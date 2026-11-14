@@ -108,4 +108,18 @@ describe('share codes', () => {
       'https://pulse.example/t/',
     );
   });
+
+  it('native shells never produce localhost links', () => {
+    const ios = { protocol: 'capacitor:', hostname: 'localhost', origin: 'capacitor://localhost', pathname: '/', port: '' };
+    const android = { protocol: 'https:', hostname: 'localhost', origin: 'https://localhost', pathname: '/', port: '' };
+    expect(shareBase(ios, undefined)).toBe('pulsetimer://import');
+    expect(shareBase(android, undefined)).toBe('pulsetimer://import');
+    expect(shareBase(android, 'https://pulse.example/w')).toBe('https://pulse.example/w/');
+    // Local dev server keeps its own address.
+    expect(shareBase({ protocol: 'http:', hostname: 'localhost', origin: 'http://localhost:5173', pathname: '/', port: '5173' }, undefined)).toBe(
+      'http://localhost:5173/',
+    );
+    const code = encodeWorkout({ mode: 'countdown', durationSec: 90 });
+    expect(parseShared(`pulsetimer://import#w=${code}`)?.mode).toBe('countdown');
+  });
 });

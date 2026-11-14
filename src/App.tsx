@@ -1,5 +1,5 @@
 import { useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
-import { NavContext, type Nav, type Route } from './nav';
+import { backGuard, NavContext, type Nav, type Route } from './nav';
 import { useSettings } from './state/store';
 import { Home } from './screens/Home';
 import { Configure } from './screens/Configure';
@@ -46,8 +46,26 @@ export function App() {
 
   useEffect(() => {
     const cur = stackRef.current;
-    history.replaceState({ depth: cur.length - 1, stack: cur } satisfies NavState, '');
+    if (!readState(history.state) && cur.length > 1) {
+      // Fresh page load that opened deeper than home (a "#w=" share link):
+      // give every screen its own history entry so back returns to home
+      // instead of leaving the app.
+      cur.forEach((_, i) => {
+        const st = { depth: i, stack: cur.slice(0, i + 1) } satisfies NavState;
+        if (i === 0) history.replaceState(st, '');
+        else history.pushState(st, '');
+      });
+    } else {
+      history.replaceState({ depth: cur.length - 1, stack: cur } satisfies NavState, '');
+    }
     const onPop = (e: PopStateEvent) => {
+      const guard = backGuard.current;
+      if (guard && guard()) {
+        // Vetoed (e.g. mid-workout): restore the entry we just left.
+        const now = stackRef.current;
+        history.pushState({ depth: now.length - 1, stack: now } satisfies NavState, '');
+        return;
+      }
       const st = readState(e.state);
       const next = st ? st.stack : stackRef.current.slice(0, 1);
       stackRef.current = next;

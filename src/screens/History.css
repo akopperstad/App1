@@ -18,6 +18,8 @@
 }
 .hist-stat {
   --tone: var(--work);
+  container-type: inline-size;
+  min-width: 0;
   display: flex;
   flex-direction: column;
   gap: 2px;
@@ -46,7 +48,8 @@
   background: color-mix(in srgb, var(--tone) 16%, transparent);
 }
 .hist-stat__value {
-  font-size: var(--fs-xl);
+  /* Shrinks with the card so "16 min" / "2h 45m" fit three-across on a phone. */
+  font-size: min(var(--fs-xl), 19cqi);
   font-weight: 900;
   letter-spacing: -0.03em;
   line-height: 1.05;
@@ -117,9 +120,13 @@
 .hist-row__meta {
   font-size: var(--fs-sm);
   color: var(--fg-3);
-  white-space: nowrap;
+  /* Up to two lines: long translated summaries must not be cut off next to the badges. */
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
   overflow: hidden;
-  text-overflow: ellipsis;
+  overflow-wrap: anywhere;
 }
 .hist-row__right {
   flex: none;
@@ -145,7 +152,7 @@
   background: var(--bg-elev-2);
   color: var(--fg-2);
 }
-.hist-row.is-open .hist-badge {
+.hist-row.is-open .hist-badge:not(.is-done):not(.is-stopped):not(.is-pr) {
   background: var(--bg-press);
 }
 .hist-badge.is-done {

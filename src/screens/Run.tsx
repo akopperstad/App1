@@ -11,7 +11,7 @@ import { resetThemeColor, setThemeColor } from '../lib/themeColor';
 import { useWakeLock } from '../lib/wakeLock';
 import { useBackgroundCues } from '../native/useBackgroundCues';
 import { useStatusBarOverride } from '../native/systemUi';
-import { useNav } from '../nav';
+import { backGuard, useNav } from '../nav';
 import { saveHistory, settingsStore, useSettings } from '../state/store';
 import {
   announceFor,
@@ -44,6 +44,7 @@ import {
 import { SplitList } from './run/LapList';
 import { MiniRing, OverallBar, ProgressRing, SegmentBar } from './run/Progress';
 import { RoundCounter } from './run/RoundCounter';
+import { sanitize } from './configure/sanitize';
 import { buildEntry } from './run/session';
 import { Sheet } from './run/Sheet';
 import { createFrameBus, useTimer } from './run/useTimer';
@@ -56,7 +57,8 @@ export function Run({ config: rawConfig }: { config: WorkoutConfig }) {
   const nav = useNav();
   const settings = useSettings();
   // Configs can come from storage (history / presets); never let a malformed one crash the run.
-  const [config] = useState<WorkoutConfig>(() => normalizeConfig(rawConfig) ?? { mode: 'stopwatch' });
+  // sanitize(): the same limits as the editor, so a hand-edited backup can't compile millions of segments.
+  const [config] = useState<WorkoutConfig>(() => sanitize(normalizeConfig(rawConfig) ?? { mode: 'stopwatch' }));
   const info = modeInfo(config.mode);
   const tr = useT();
   const { t, tp } = tr;
@@ -253,7 +255,26 @@ export function Run({ config: rawConfig }: { config: WorkoutConfig }) {
     else nav.replace({ name: 'home' });
   }, [nav]);
 
+  /** Set once the user chose to leave, so the back-button guard lets the navigation through. */
+  const leaving = useRef(false);
+
+  // Browser / Android back while a workout is active asks first (same sheet as the ← button).
+  useEffect(() => {
+    const guard = () => {
+      if (leaving.current) return false;
+      const st = engine.getStatus();
+      if (st !== 'running' && st !== 'paused') return false;
+      setSheet('leave');
+      return true;
+    };
+    backGuard.current = guard;
+    return () => {
+      if (backGuard.current === guard) backGuard.current = null;
+    };
+  }, [engine]);
+
   const leave = useCallback(() => {
+    leaving.current = true;
     persist(false, false);
     engine.setCueHandler(undefined); // leaving: no pause click / speech
     cuePlayer.stop();
@@ -404,7 +425,17 @@ export function Run({ config: rawConfig }: { config: WorkoutConfig }) {
   const ring = useCallback((s: Snapshot) => ringValue(s, config, settingsStore.get(), idleSeg), [config, idleSeg]);
 
   const label = status === 'idle' ? modeName : phaseLabel(seg, tr);
-  const detail = status === 'idle' ? modeTagline(config.mode, tr) : seg.detail && !isUpNextRest(seg) ? seg.detail : undefined;
+  // The Tabata tagline spells out the classic 20/10 × 8; don't show it for a different plan.
+  const classicTagline =
+    config.mode !== 'tabata' || (config.workSec === 20 && config.restSec === 10 && config.rounds === 8);
+  const detail =
+    status === 'idle'
+      ? classicTagline
+        ? modeTagline(config.mode, tr)
+        : undefined
+      : seg.detail && !isUpNextRest(seg)
+        ? seg.detail
+        : undefined;
   const subInfo =
     status === 'idle'
       ? ''

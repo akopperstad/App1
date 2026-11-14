@@ -7,6 +7,9 @@ export const es: Dict = {
   'common.done': 'Listo',
   'common.next': 'Siguiente',
   'common.back': 'Atrás',
+  'crash.title': 'Algo salió mal',
+  'crash.body': 'Tus entrenamientos guardados y tu historial están a salvo.',
+  'crash.reload': 'Recargar',
   'common.skip': 'Omitir',
   'common.import': 'Importar',
   'common.share': 'Compartir',
@@ -468,8 +471,8 @@ export const es: Dict = {
 
   // ---- settings additions
   'settings.mix': 'Sonar sobre la música',
-  'settings.mix.hint': 'Los pitidos suenan sobre Spotify y otras apps sin pausarlas',
-  'settings.mix.hintWeb': 'Los pitidos suenan sobre Spotify y otras apps; se aplica en la app Pulse para iPhone y Android',
+  'settings.mix.hint': 'Los pitidos suenan sobre tu app de música sin pausarla',
+  'settings.mix.hintWeb': 'Los pitidos suenan sobre tu app de música; se aplica en la app Pulse para iPhone y Android',
   'settings.bgAlerts': 'Avisos con el móvil bloqueado',
   'settings.bgAlerts.hint': 'Una notificación en cada cambio de fase con el móvil bloqueado',
 
