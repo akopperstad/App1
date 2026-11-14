@@ -1,0 +1,379 @@
+/* First-run onboarding. Tokens only, so it follows light & dark themes. */
+
+.onb {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  height: 100dvh;
+  overflow: hidden;
+  background: var(--bg);
+  color: var(--fg);
+  isolation: isolate;
+}
+
+/* Ambient colour that drifts with the active slide. */
+.onb__glow {
+  position: absolute;
+  inset: -20% -40% auto;
+  height: 70%;
+  z-index: -1;
+  pointer-events: none;
+  background:
+    radial-gradient(40% 50% at 30% 40%, color-mix(in srgb, var(--work) 26%, transparent), transparent 70%),
+    radial-gradient(35% 45% at 70% 30%, color-mix(in srgb, var(--done) 22%, transparent), transparent 70%),
+    radial-gradient(30% 40% at 50% 60%, color-mix(in srgb, var(--rest) 16%, transparent), transparent 70%);
+  filter: blur(10px);
+  transform: translateX(calc(var(--i, 0) * -12%));
+  transition: transform 600ms var(--ease);
+}
+:root[data-theme='light'] .onb__glow {
+  opacity: 0.75;
+}
+
+.onb__top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  min-height: 56px;
+  padding: calc(var(--safe-top) + var(--s-2)) calc(var(--s-4) + var(--safe-right)) 0 calc(var(--s-5) + var(--safe-left));
+}
+.onb__brand {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 900;
+  letter-spacing: -0.03em;
+  font-size: var(--fs-lg);
+}
+.onb__brand svg {
+  color: var(--work);
+}
+.onb__skip {
+  min-height: 44px;
+  padding: 0 var(--s-4);
+  border-radius: var(--r-pill);
+  color: var(--fg-2);
+  font-weight: 700;
+  font-size: var(--fs-sm);
+  transition: background-color var(--dur) var(--ease);
+}
+.onb__skip:hover {
+  background: var(--bg-elev-2);
+}
+
+/* ---------- swipe track ---------- */
+.onb__track {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  overflow-x: auto;
+  overflow-y: hidden;
+  scroll-snap-type: x mandatory;
+  overscroll-behavior-x: contain;
+  scrollbar-width: none;
+  -webkit-overflow-scrolling: touch;
+}
+.onb__track::-webkit-scrollbar {
+  display: none;
+}
+.onb__slide {
+  flex: 0 0 100%;
+  min-width: 0;
+  scroll-snap-align: center;
+  scroll-snap-stop: always;
+  overflow-y: auto;
+  padding: var(--s-2) calc(var(--s-5) + var(--safe-right)) var(--s-4) calc(var(--s-5) + var(--safe-left));
+}
+.onb__slide-inner {
+  max-width: 440px;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  opacity: 0.35;
+  transform: scale(0.97);
+  transition:
+    opacity 400ms var(--ease),
+    transform 400ms var(--ease);
+}
+.onb__slide.is-active .onb__slide-inner {
+  opacity: 1;
+  transform: none;
+}
+
+.onb__art {
+  display: grid;
+  place-items: center;
+  width: min(200px, 30vh);
+  aspect-ratio: 1;
+  margin: var(--s-2) 0 var(--s-4);
+}
+.onb__eyebrow {
+  margin: 0 0 var(--s-2);
+  font-size: var(--fs-xs);
+  font-weight: 800;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--work);
+}
+.onb__title {
+  margin: 0;
+  font-size: clamp(1.75rem, 7vw, 2.25rem);
+  font-weight: 900;
+  letter-spacing: -0.035em;
+  line-height: 1.05;
+  text-wrap: balance;
+}
+.onb__body {
+  margin: var(--s-3) 0 0;
+  max-width: 360px;
+  color: var(--fg-2);
+  font-size: var(--fs-md);
+  line-height: 1.5;
+  text-wrap: pretty;
+}
+.onb__extra {
+  width: 100%;
+  margin-top: var(--s-5);
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-3);
+  text-align: left;
+}
+
+.onb__modes {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: var(--s-2);
+}
+.onb__modes li {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  border-radius: var(--r-pill);
+  border: 1px solid var(--line);
+  background: color-mix(in srgb, var(--bg-elev) 85%, transparent);
+  font-size: var(--fs-sm);
+  font-weight: 700;
+  color: var(--fg-2);
+}
+.onb__modes li::before {
+  content: '';
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--accent);
+}
+
+.onb__hint {
+  margin: calc(-1 * var(--s-1)) 0 var(--s-1);
+  font-size: var(--fs-xs);
+  color: var(--fg-3);
+  text-align: center;
+}
+.onb__row,
+.onb__field {
+  padding: var(--s-3) var(--s-4);
+  border-radius: var(--r-md);
+  background: var(--bg-elev);
+  border: 1px solid var(--line);
+}
+.onb__row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--s-3);
+  font-weight: 600;
+}
+.onb__field {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-2);
+}
+.onb__field-label {
+  font-size: var(--fs-sm);
+  font-weight: 700;
+  color: var(--fg-2);
+}
+
+/* ---------- footer ---------- */
+.onb__foot {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--s-4);
+  padding: var(--s-3) calc(var(--s-5) + var(--safe-right)) calc(var(--s-5) + var(--safe-bottom)) calc(var(--s-5) + var(--safe-left));
+}
+.onb__foot .onb__next {
+  max-width: 440px;
+}
+.onb__dots {
+  display: flex;
+  gap: 4px;
+}
+.onb__dot {
+  position: relative;
+  width: 28px;
+  height: 28px;
+  border-radius: var(--r-pill);
+}
+.onb__dot::after {
+  content: '';
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 8px;
+  height: 8px;
+  border-radius: var(--r-pill);
+  background: var(--line-strong);
+  transform: translate(-50%, -50%);
+  transition:
+    width 300ms var(--ease),
+    background-color 300ms var(--ease);
+}
+.onb__dot.is-active::after {
+  width: 24px;
+  background: var(--work);
+}
+
+/* ---------- art ---------- */
+.onb-art {
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+}
+.onb-art__track {
+  fill: none;
+  stroke: var(--bg-elev-2);
+  stroke-width: 12;
+}
+.onb-art__ring {
+  fill: none;
+  stroke-width: 12;
+  stroke-linecap: round;
+  stroke-dasharray: 503;
+  stroke-dashoffset: 503;
+  transform: rotate(-90deg);
+  transform-origin: 100px 100px;
+  filter: drop-shadow(0 6px 18px color-mix(in srgb, var(--work) 45%, transparent));
+}
+.onb__slide.is-active .onb-art__ring {
+  animation: onb-ring 2.4s var(--ease) forwards;
+}
+.onb-art__ring--prep {
+  stroke: var(--prep);
+  filter: drop-shadow(0 6px 18px color-mix(in srgb, var(--prep) 40%, transparent));
+}
+.onb__slide.is-active .onb-art__ring--prep {
+  animation: onb-ring-prep 10s linear infinite;
+}
+@keyframes onb-ring {
+  to {
+    stroke-dashoffset: 126;
+  }
+}
+@keyframes onb-ring-prep {
+  from {
+    stroke-dashoffset: 0;
+  }
+  to {
+    stroke-dashoffset: 503;
+  }
+}
+.onb-art__inner {
+  fill: var(--bg-elev);
+  stroke: var(--line);
+}
+.onb-art__digits {
+  fill: var(--fg);
+  font-family: var(--font);
+  font-size: 40px;
+  font-weight: 900;
+  letter-spacing: -0.04em;
+  font-variant-numeric: tabular-nums;
+}
+.onb-art__digits--big {
+  font-size: 64px;
+}
+.onb-art__caption {
+  fill: var(--fg-3);
+  font-family: var(--font);
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 0.2em;
+}
+
+.onb-art__halo {
+  fill: color-mix(in srgb, var(--rest) 10%, transparent);
+  stroke: color-mix(in srgb, var(--rest) 30%, transparent);
+  stroke-width: 1.5;
+  transform-origin: 100px 100px;
+}
+.onb-art__halo--2 {
+  fill: color-mix(in srgb, var(--rest) 14%, transparent);
+}
+.onb__slide.is-active .onb-art__halo {
+  animation: onb-halo 2.4s var(--ease) infinite;
+}
+.onb__slide.is-active .onb-art__halo--2 {
+  animation-delay: 300ms;
+}
+@keyframes onb-halo {
+  50% {
+    transform: scale(1.05);
+    opacity: 0.7;
+  }
+}
+.onb-art__bar {
+  fill: var(--rest);
+  transform-box: fill-box;
+  transform-origin: center;
+  transform: scaleY(0.4);
+}
+.onb__slide.is-active .onb-art__bar {
+  animation: onb-bar 1.2s var(--ease) infinite;
+  animation-delay: var(--d);
+}
+.onb-art--sound.is-playing .onb-art__bar {
+  fill: var(--work);
+  animation-duration: 0.5s;
+}
+@keyframes onb-bar {
+  0%,
+  100% {
+    transform: scaleY(0.35);
+  }
+  50% {
+    transform: scaleY(1);
+  }
+}
+
+@media (min-height: 760px) {
+  .onb__art {
+    margin: var(--s-5) 0 var(--s-5);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .onb-art__ring {
+    stroke-dashoffset: 126;
+  }
+  .onb-art__bar {
+    transform: none;
+  }
+}
+
+/* The sound slide carries the most controls: smaller art keeps it on one screen. */
+.onb__slide:nth-child(2) .onb__art {
+  width: min(132px, 17vh);
+  margin: 0 0 var(--s-3);
+}
+.onb__slide:nth-child(2) .onb__extra {
+  margin-top: var(--s-4);
+}

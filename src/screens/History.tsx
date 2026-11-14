@@ -1,5 +1,9 @@
 import { useMemo, useState, type CSSProperties } from 'react';
 import { describe, modeInfo } from '../engine/modes';
+import type { Mode } from '../engine/types';
+import { computeRecords, startOfDay, startOfWeek, weeklyMinutes, type PersonalRecord } from '../features/records';
+import { WeeklyChart } from '../features/WeeklyChart';
+import { useT, type Translator } from '../i18n';
 import { formatClockString } from '../lib/format';
 import { useNav } from '../nav';
 import { clearHistory, deleteHistory, useHistory, type HistoryEntry } from '../state/store';
@@ -7,28 +11,15 @@ import { Button, Icon, Sheet, TopBar } from '../components/ui';
 import { startWorkout } from './configure/start';
 import './History.css';
 
-function startOfDay(t: number): number {
-  const d = new Date(t);
-  d.setHours(0, 0, 0, 0);
-  return d.getTime();
-}
-
-function startOfWeek(t: number): number {
-  const d = new Date(startOfDay(t));
-  const dow = (d.getDay() + 6) % 7; // Monday = 0
-  d.setDate(d.getDate() - dow);
-  return d.getTime();
-}
-
-function dayLabel(dayStart: number, today: number): string {
-  if (dayStart === today) return 'Today';
+function dayLabel(dayStart: number, today: number, { t, locale }: Translator): string {
+  if (dayStart === today) return t('hist.today');
   // Use calendar arithmetic so DST shifts don't break "Yesterday".
   const y = new Date(today);
   y.setDate(y.getDate() - 1);
-  if (dayStart === y.getTime()) return 'Yesterday';
+  if (dayStart === y.getTime()) return t('hist.yesterday');
   const d = new Date(dayStart);
   const sameYear = d.getFullYear() === new Date(today).getFullYear();
-  return d.toLocaleDateString(undefined, {
+  return d.toLocaleDateString(locale, {
     weekday: 'long',
     month: 'short',
     day: 'numeric',
@@ -67,19 +58,37 @@ function splits(times: number[]): { at: number; split: number }[] {
   return times.map((t, i) => ({ at: t, split: t - (i > 0 ? times[i - 1] : 0) }));
 }
 
+type Filter = 'all' | Mode;
+
 export function History() {
   const nav = useNav();
   const history = useHistory();
+  const tr = useT();
+  const { t, tp } = tr;
   const [open, setOpen] = useState<string | null>(null);
   const [confirmClear, setConfirmClear] = useState(false);
+  const [filter, setFilter] = useState<Filter>('all');
 
   const now = Date.now();
   const today = startOfDay(now);
   const stats = computeStats(history, now);
+  const { records, prIds } = useMemo(() => computeRecords(history), [history]);
+  const weeks = useMemo(() => weeklyMinutes(history, today, 8), [history, today]);
+
+  // Filter chips: modes present in history, in the app's mode order.
+  const modes = useMemo(() => {
+    const present = new Set(history.map((h) => h.mode));
+    return (['amrap', 'emom', 'fortime', 'tabata', 'interval', 'deathby', 'custom', 'countdown', 'stopwatch'] as Mode[]).filter(
+      (m) => present.has(m),
+    );
+  }, [history]);
+  const activeFilter: Filter = filter !== 'all' && !modes.includes(filter) ? 'all' : filter;
 
   const groups = useMemo(() => {
     const out: { day: number; items: HistoryEntry[] }[] = [];
-    const sorted = [...history].sort((a, b) => b.startedAt - a.startedAt);
+    const sorted = [...history]
+      .filter((h) => activeFilter === 'all' || h.mode === activeFilter)
+      .sort((a, b) => b.startedAt - a.startedAt);
     for (const h of sorted) {
       const d = startOfDay(h.startedAt);
       const last = out[out.length - 1];
@@ -87,26 +96,28 @@ export function History() {
       else out.push({ day: d, items: [h] });
     }
     return out;
-  }, [history]);
+  }, [history, activeFilter]);
+
+  const shownRecords = records.filter((r) => activeFilter === 'all' || r.mode === activeFilter).slice(0, 6);
 
   return (
     <div className="ui-page hist">
       <div className="ui-page__inner">
         <TopBar
-          title="History"
+          title={t('hist.title')}
           right={
             history.length > 0 ? (
               <Button variant="ghost" className="hist__clear" onClick={() => setConfirmClear(true)}>
-                Clear all
+                {t('hist.clear')}
               </Button>
             ) : undefined
           }
         />
 
-        <div className="hist-stats" role="group" aria-label="This week">
-          <Stat icon="bolt" value={String(stats.weekCount)} label={stats.weekCount === 1 ? 'Workout this week' : 'Workouts this week'} tone="work" />
-          <Stat icon="timer" value={stats.weekMs > 0 ? compactTime(stats.weekMs) : '0m'} label="Time this week" tone="rest" />
-          <Stat icon="flame" value={String(stats.streak)} label="Day streak" tone="prep" />
+        <div className="hist-stats" role="group" aria-label={t('hist.thisWeek')}>
+          <Stat icon="bolt" value={String(stats.weekCount)} label={tp('hist.workoutsWeek', stats.weekCount)} tone="work" />
+          <Stat icon="timer" value={stats.weekMs > 0 ? compactTime(stats.weekMs) : '0m'} label={t('hist.timeWeek')} tone="rest" />
+          <Stat icon="flame" value={String(stats.streak)} label={t('hist.streak')} tone="prep" />
         </div>
 
         {history.length === 0 ? (
@@ -114,44 +125,72 @@ export function History() {
             <div className="hist-empty__art" aria-hidden>
               <Icon name="pulse" size={36} strokeWidth={2.4} />
             </div>
-            <h2>No workouts yet</h2>
-            <p>Finish or stop a timer and it will show up here with your time, rounds and splits.</p>
+            <h2>{t('hist.emptyTitle')}</h2>
+            <p>{t('hist.emptyBody')}</p>
             <Button variant="primary" icon="play" onClick={() => nav.back()}>
-              Pick a timer
+              {t('hist.emptyCta')}
             </Button>
           </div>
         ) : (
-          groups.map((g) => (
-            <section key={g.day} className="hist-group">
-              <h2 className="hist-group__title">{dayLabel(g.day, today)}</h2>
-              <div className="ui-card">
-                {g.items.map((h) => (
-                  <EntryRow
-                    key={h.id}
-                    entry={h}
-                    open={open === h.id}
-                    onToggle={() => setOpen((o) => (o === h.id ? null : h.id))}
-                    onRepeat={() => startWorkout(nav, h.config)}
-                    onDelete={() => {
-                      deleteHistory(h.id);
-                      setOpen(null);
-                    }}
-                  />
+          <>
+            <WeeklyChart weeks={weeks} />
+
+            {modes.length > 1 && (
+              <div className="hist-filter" role="group" aria-label={t('hist.filter')}>
+                {(['all', ...modes] as Filter[]).map((m) => (
+                  <button
+                    key={m}
+                    type="button"
+                    className={`hist-chip${activeFilter === m ? ' is-active' : ''}`}
+                    aria-pressed={activeFilter === m}
+                    style={m === 'all' ? undefined : ({ '--accent': modeInfo(m).accent } as CSSProperties)}
+                    onClick={() => setFilter(m)}
+                  >
+                    {m !== 'all' && <span className="hist-chip__dot" aria-hidden />}
+                    {m === 'all' ? t('hist.filterAll') : t(`mode.${m}`)}
+                  </button>
                 ))}
               </div>
-            </section>
-          ))
+            )}
+
+            {shownRecords.length > 0 && <Records records={shownRecords} />}
+
+            {groups.map((g) => (
+              <section key={g.day} className="hist-group">
+                <h2 className="hist-group__title">{dayLabel(g.day, today, tr)}</h2>
+                <div className="ui-card">
+                  {g.items.map((h) => (
+                    <EntryRow
+                      key={h.id}
+                      entry={h}
+                      pr={prIds.has(h.id)}
+                      open={open === h.id}
+                      onToggle={() => setOpen((o) => (o === h.id ? null : h.id))}
+                      onRepeat={() => startWorkout(nav, h.config)}
+                      onDelete={() => {
+                        deleteHistory(h.id);
+                        setOpen(null);
+                      }}
+                    />
+                  ))}
+                </div>
+              </section>
+            ))}
+            {groups.length === 0 && activeFilter !== 'all' && (
+              <p className="hist-filter__empty">{t('hist.filterEmpty', { mode: t(`mode.${activeFilter}`) })}</p>
+            )}
+          </>
         )}
       </div>
 
       <Sheet
         open={confirmClear}
         onClose={() => setConfirmClear(false)}
-        title="Clear all history?"
+        title={t('hist.confirmTitle')}
         footer={
           <>
             <Button variant="secondary" onClick={() => setConfirmClear(false)} data-autofocus>
-              Cancel
+              {t('common.cancel')}
             </Button>
             <Button
               variant="danger"
@@ -161,17 +200,41 @@ export function History() {
                 setConfirmClear(false);
               }}
             >
-              Clear all
+              {t('hist.clear')}
             </Button>
           </>
         }
       >
-        <p className="hist__confirm">
-          This permanently deletes {history.length} {history.length === 1 ? 'workout' : 'workouts'} from this device.
-          Saved workouts are kept.
-        </p>
+        <p className="hist__confirm">{tp('hist.confirmBody', history.length)}</p>
       </Sheet>
     </div>
+  );
+}
+
+function Records({ records }: { records: PersonalRecord[] }) {
+  const { t, tp } = useT();
+  return (
+    <section className="hist-records" aria-labelledby="hist-records-title">
+      <h2 id="hist-records-title" className="hist-group__title">
+        {t('hist.records')}
+      </h2>
+      <ul className="hist-records__list">
+        {records.map((r) => (
+          <li key={r.key} className="hist-record" style={{ '--accent': modeInfo(r.mode).accent } as CSSProperties}>
+            <span className="hist-record__icon" aria-hidden>
+              <Icon name="trophy" size={16} />
+            </span>
+            <span className="hist-record__name">{r.name}</span>
+            <span className="hist-record__value num">
+              {r.kind === 'time' ? formatClockString(r.value) : tp('hist.rounds', r.value)}
+            </span>
+            <span className="hist-record__meta">
+              {r.kind === 'time' ? t('hist.bestTime') : t('hist.mostRounds')} · {tp('hist.attempts', r.attempts)}
+            </span>
+          </li>
+        ))}
+      </ul>
+    </section>
   );
 }
 
@@ -189,43 +252,49 @@ function Stat({ icon, value, label, tone }: { icon: 'bolt' | 'timer' | 'flame'; 
 
 function EntryRow({
   entry: h,
+  pr,
   open,
   onToggle,
   onRepeat,
   onDelete,
 }: {
   entry: HistoryEntry;
+  pr: boolean;
   open: boolean;
   onToggle: () => void;
   onRepeat: () => void;
   onDelete: () => void;
 }) {
+  const { t, tp, locale } = useT();
   const info = modeInfo(h.mode);
-  const time = new Date(h.startedAt).toLocaleTimeString(undefined, { hour: 'numeric', minute: '2-digit' });
+  const title = t(`mode.${h.mode}`);
+  const time = new Date(h.startedAt).toLocaleTimeString(locale, { hour: 'numeric', minute: '2-digit' });
   const rounds = splits(h.roundTimesMs ?? []);
   const laps = h.laps ?? [];
   const detailsId = `hist-${h.id}`;
 
   return (
-    <div className={`hist-row${open ? ' is-open' : ''}`} style={{ '--accent': info.accent } as CSSProperties}>
+    <div className={`hist-row${open ? ' is-open' : ''}${pr ? ' is-pr' : ''}`} style={{ '--accent': info.accent } as CSSProperties}>
       <button type="button" className="hist-row__main" aria-expanded={open} aria-controls={detailsId} onClick={onToggle}>
         <span className="hist-row__bar" aria-hidden />
         <span className="hist-row__text">
-          <span className="hist-row__name">{h.name || info.title}</span>
+          <span className="hist-row__name">{h.name || title}</span>
           <span className="hist-row__meta">
-            {h.name && h.name !== info.title ? `${info.title} · ` : ''}
+            {h.name && h.name !== info.title && h.name !== title ? `${title} · ` : ''}
             {describe(h.config)} · {time}
           </span>
         </span>
         <span className="hist-row__right">
           <span className="hist-row__time num">{formatClockString(h.durationMs)}</span>
           <span className="hist-row__badges">
-            {h.rounds > 0 && (
-              <span className="hist-badge num">
-                {h.rounds} {h.rounds === 1 ? 'rd' : 'rds'}
+            {pr && (
+              <span className="hist-badge is-pr" title={t('hist.prLabel')}>
+                <span aria-hidden>{t('hist.pr')}</span>
+                <span className="visually-hidden">{t('hist.prLabel')}</span>
               </span>
             )}
-            <span className={`hist-badge ${h.completed ? 'is-done' : 'is-stopped'}`}>{h.completed ? 'Done' : 'Stopped'}</span>
+            {h.rounds > 0 && <span className="hist-badge num">{tp('hist.rounds', h.rounds)}</span>}
+            <span className={`hist-badge ${h.completed ? 'is-done' : 'is-stopped'}`}>{h.completed ? t('hist.done') : t('hist.stopped')}</span>
           </span>
         </span>
       </button>
@@ -233,26 +302,29 @@ function EntryRow({
       {open && (
         <div className="hist-row__details" id={detailsId}>
           {rounds.length > 0 && (
-            <SplitTable title="Rounds" rows={rounds.map((r, i) => ({ label: `Round ${i + 1}`, at: r.at, split: r.split }))} />
+            <SplitTable
+              title={t('hist.roundsTitle')}
+              rows={rounds.map((r, i) => ({ label: t('hist.round', { n: i + 1 }), at: r.at, split: r.split }))}
+            />
           )}
           {laps.length > 0 && (
             <SplitTable
-              title="Laps"
+              title={t('hist.lapsTitle')}
               rows={laps.map((l, i) => ({
-                label: `Lap ${i + 1}`,
+                label: t('hist.lap', { n: i + 1 }),
                 at: l.atMs,
                 split: l.splitMs ?? l.atMs - (i > 0 ? laps[i - 1].atMs : 0),
               }))}
             />
           )}
-          {rounds.length === 0 && laps.length === 0 && <p className="hist-row__none">No rounds or laps recorded.</p>}
+          {rounds.length === 0 && laps.length === 0 && <p className="hist-row__none">{t('hist.none')}</p>}
           {h.note && <p className="hist-row__note">{h.note}</p>}
           <div className="hist-row__actions">
             <Button variant="primary" icon="repeat" onClick={onRepeat}>
-              Repeat
+              {t('hist.repeat')}
             </Button>
             <Button variant="danger" icon="trash" onClick={onDelete}>
-              Delete
+              {t('hist.delete')}
             </Button>
           </div>
         </div>
@@ -262,6 +334,7 @@ function EntryRow({
 }
 
 function SplitTable({ title, rows }: { title: string; rows: { label: string; at: number; split: number }[] }) {
+  const { t } = useT();
   // Guarded: Math.min() of an empty list is Infinity; ties at display precision aren't "best".
   const tenthsOf = (ms: number) => Math.floor(ms / 100);
   const best = rows.length ? Math.min(...rows.map((r) => tenthsOf(r.split))) : -1;
@@ -272,8 +345,8 @@ function SplitTable({ title, rows }: { title: string; rows: { label: string; at:
       <thead>
         <tr>
           <th scope="col">#</th>
-          <th scope="col">Split</th>
-          <th scope="col">Total</th>
+          <th scope="col">{t('hist.split')}</th>
+          <th scope="col">{t('hist.total')}</th>
         </tr>
       </thead>
       <tbody>

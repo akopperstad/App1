@@ -3,10 +3,11 @@ import type { Mode, WorkoutConfig } from './engine/types';
 
 export type Route =
   | { name: 'home' }
-  | { name: 'configure'; mode: Mode; initial?: WorkoutConfig }
+  | { name: 'configure'; mode: Mode; initial?: WorkoutConfig; /** Opened from a share link. */ imported?: boolean }
   | { name: 'run'; config: WorkoutConfig }
   | { name: 'history' }
-  | { name: 'settings' };
+  | { name: 'settings' }
+  | { name: 'onboarding' };
 
 export interface Nav {
   route: Route;
