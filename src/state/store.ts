@@ -5,6 +5,9 @@ import type { Mode, WorkoutConfig } from '../engine/types';
 
 // ------------------------------------------------------------------ settings
 
+export type SoundPack = 'classic' | 'boxing' | 'whistle' | 'soft' | 'digital';
+export const SOUND_PACKS: SoundPack[] = ['classic', 'boxing', 'whistle', 'soft', 'digital'];
+
 export interface Settings {
   /** "Get ready" lead-in, seconds (0 = off). */
   prepSec: number;
@@ -27,6 +30,19 @@ export interface Settings {
   theme: 'system' | 'dark' | 'light';
   /** Flash the full screen colour on segment changes. */
   flashOnChange: boolean;
+  /** Synthesized sound style for beeps & tones. */
+  soundPack: SoundPack;
+  /**
+   * Native apps only: schedule alerts (sound + vibration via system
+   * notifications) so cues still fire when the phone is locked/backgrounded.
+   */
+  backgroundAlerts: boolean;
+  /** Let beeps play over the user's music (iOS: mix instead of interrupting). */
+  mixWithMusic: boolean;
+  /** UI language; 'auto' follows the device. */
+  language: string;
+  /** First-run onboarding has been completed. */
+  onboarded: boolean;
 }
 
 export const defaultSettings: Settings = {
@@ -42,6 +58,11 @@ export const defaultSettings: Settings = {
   countDownDisplay: true,
   theme: 'system',
   flashOnChange: true,
+  soundPack: 'classic',
+  backgroundAlerts: true,
+  mixWithMusic: true,
+  language: 'auto',
+  onboarded: false,
 };
 
 // ------------------------------------------------------------------ presets & history
@@ -111,6 +132,7 @@ export function sanitizeSettings(raw: unknown): Settings {
   out.prepSec = Math.min(600, Math.max(0, Math.round(out.prepSec)));
   out.volume = Math.min(1, Math.max(0, out.volume));
   if (!THEMES.includes(out.theme)) out.theme = defaultSettings.theme;
+  if (!SOUND_PACKS.includes(out.soundPack)) out.soundPack = defaultSettings.soundPack;
   return out;
 }
 
