@@ -625,9 +625,9 @@ export function Run({ config: rawConfig }: { config: WorkoutConfig }) {
   return (
     <div ref={rootRef} className="run" data-phase={phase} data-status={status} data-tinted={tinted ? '' : undefined} data-focus={focus && active ? '' : undefined} style={style}>
       <div className="run__bg" aria-hidden="true" />
-      {clock.final > 0 && <div key={clock.final} className="run__beat" aria-hidden="true" />}
+      {clock.final > 0 && <div key={`beat-${clock.final}`} className="run__beat" aria-hidden="true" />}
       {flash && settings.flashOnChange && (
-        <div key={flash.n} className={`run__flash run__flash--${flash.kind}`} aria-hidden="true" />
+        <div key={`flash-${flash.n}`} className={`run__flash run__flash--${flash.kind}`} aria-hidden="true" />
       )}
 
       <header className="run__top">
